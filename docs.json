@@ -1,6 +1,6 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "",
+  "theme": "aspen",
   "name": "Trainly Starter Kit",
   "colors": {
     "primary": "#16A34A",
