@@ -1,0 +1,526 @@
+---
+title: 'Chat API'
+description: 'Query and interact with your knowledge base using AI models'
+---
+
+## Overview
+
+The Chat API allows you to query your Trainly knowledge base using natural language. It supports multiple AI models, streaming responses, and custom prompts with citation-backed answers.
+
+<Info>
+  All responses are powered by semantic search over your documents with GPT-4, Claude, or other AI models.
+</Info>
+
+## Authentication
+
+Chat API endpoints require a valid API key from your chat settings:
+
+```bash
+Authorization: Bearer tk_your_api_key_here
+```
+
+<Warning>
+  Make sure API access is enabled in your chat settings and the chat has published settings before using these endpoints.
+</Warning>
+
+## Answer Question
+
+### Standard Response
+
+Query your knowledge base with a question and receive an AI-generated answer with citations:
+
+```bash POST /v1/{chat_id}/answer_question
+curl -X POST https://api.trainly.com/v1/chat_abc123/answer_question \
+  -H "Authorization: Bearer tk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "What are the main findings from the research?",
+    "selected_model": "gpt-4o-mini",
+    "temperature": 0.7,
+    "max_tokens": 1000
+  }'
+```
+
+**Path Parameters**
+
+<ParamField path="chat_id" type="string" required>
+  The ID of your chat/knowledge base
+</ParamField>
+
+**Request Body**
+
+<ParamField body="question" type="string" required>
+  The question to ask about your documents
+</ParamField>
+
+<ParamField body="selected_model" type="string">
+  AI model to use. Options: `gpt-4o-mini` (default), `gpt-4o`, `gpt-4`, `claude-3-sonnet`, `claude-3-opus`
+</ParamField>
+
+<ParamField body="temperature" type="number" default={0.7}>
+  Sampling temperature (0.0 to 2.0). Higher values make output more random.
+</ParamField>
+
+<ParamField body="max_tokens" type="integer" default={1000}>
+  Maximum tokens in the response
+</ParamField>
+
+<ParamField body="custom_prompt" type="string">
+  Optional custom system prompt to override default behavior
+</ParamField>
+
+<ParamField body="scope_filters" type="object">
+  Filter results by custom scopes (e.g., `{"playlist_id": "xyz"}`)
+</ParamField>
+
+**Response**
+
+```json
+{
+  "answer": "Based on the research documents, the main findings are:\n\n1. The primary hypothesis was confirmed [^0]\n2. Secondary effects were observed [^1][^2]\n3. Future research directions include [^3]",
+  "context": [
+    {
+      "chunk_id": "doc1_chunk_0",
+      "chunk_text": "The primary hypothesis states that...",
+      "score": 0.94
+    },
+    {
+      "chunk_id": "doc1_chunk_5",
+      "chunk_text": "Secondary observations revealed...",
+      "score": 0.89
+    }
+  ],
+  "chat_id": "chat_abc123",
+  "model": "gpt-4o-mini",
+  "usage": {
+    "prompt_tokens": 1250,
+    "completion_tokens": 342,
+    "total_tokens": 1592
+  }
+}
+```
+
+**Response Fields**
+
+<ResponseField name="answer" type="string">
+  The AI-generated answer with inline citations (e.g., [^0], [^1])
+</ResponseField>
+
+<ResponseField name="context" type="array">
+  Array of source chunks used to generate the answer, ordered by relevance
+
+  <Expandable title="Context Object Properties">
+    <ResponseField name="chunk_id" type="string">
+      Unique identifier for the chunk
+    </ResponseField>
+    <ResponseField name="chunk_text" type="string">
+      The actual text content from your documents
+    </ResponseField>
+    <ResponseField name="score" type="number">
+      Relevance score (0.0 to 1.0)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="chat_id" type="string">
+  The chat ID that was queried
+</ResponseField>
+
+<ResponseField name="model" type="string">
+  The AI model used for generation
+</ResponseField>
+
+<ResponseField name="usage" type="object">
+  Token usage statistics for the request
+</ResponseField>
+
+### Streaming Response
+
+Get real-time streaming responses for a better user experience:
+
+```bash POST /v1/{chat_id}/answer_question_stream
+curl -X POST https://api.trainly.com/v1/chat_abc123/answer_question_stream \
+  -H "Authorization: Bearer tk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -H "Accept: text/event-stream" \
+  -d '{
+    "question": "Explain the methodology used",
+    "selected_model": "gpt-4o-mini"
+  }'
+```
+
+**Response Format (Server-Sent Events)**
+
+```
+data: {"type": "content", "data": "Based"}
+
+data: {"type": "content", "data": " on"}
+
+data: {"type": "content", "data": " the"}
+
+data: {"type": "content", "data": " methodology"}
+
+data: {"type": "end"}
+```
+
+**Event Types**
+
+<ResponseField name="content" type="event">
+  Chunk of the AI response text
+  ```json
+  {"type": "content", "data": "text chunk"}
+  ```
+</ResponseField>
+
+<ResponseField name="context" type="event">
+  Source chunks used (sent at the beginning)
+  ```json
+  {
+    "type": "context",
+    "data": [
+      {
+        "chunk_id": "...",
+        "chunk_text": "...",
+        "score": 0.92
+      }
+    ]
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="end" type="event">
+  Signals the end of the stream
+  ```json
+  {"type": "end"}
+  ```
+</ResponseField>
+
+<ResponseField name="error" type="event">
+  Error occurred during streaming
+  ```json
+  {"type": "error", "data": "Error message"}
+  ```
+</ResponseField>
+
+## Chat Information
+
+### Get Chat Info
+
+Retrieve metadata about a chat:
+
+```bash GET /v1/{chat_id}/info
+curl -X GET https://api.trainly.com/v1/chat_abc123/info \
+  -H "Authorization: Bearer tk_your_api_key"
+```
+
+**Response**
+
+```json
+{
+  "chat_id": "chat_abc123",
+  "title": "Research Analysis",
+  "created_at": 1609459200000,
+  "has_api_access": true,
+  "visibility": "private",
+  "context_files": 12,
+  "api_version": "1.0.0"
+}
+```
+
+## Health Check
+
+### API Health Status
+
+Check if the API is operational:
+
+```bash GET /v1/health
+curl -X GET https://api.trainly.com/v1/health
+```
+
+**Response**
+
+```json
+{
+  "status": "healthy",
+  "timestamp": 1609459200,
+  "version": "1.0.0",
+  "services": {
+    "neo4j": "connected",
+    "openai": "configured"
+  }
+}
+```
+
+## Internal Endpoints
+
+These endpoints are used internally by the Trainly dashboard and require additional authentication:
+
+### Create Nodes and Embeddings
+
+```bash POST /create_nodes_and_embeddings
+curl -X POST https://api.trainly.com/create_nodes_and_embeddings \
+  -H "Content-Type: application/json" \
+  -d '{
+    "pdf_text": "Document content here...",
+    "pdf_id": "unique_file_id",
+    "chat_id": "chat_abc123",
+    "filename": "research.pdf",
+    "scope_values": {"workspace_id": "ws_123"}
+  }'
+```
+
+<Warning>
+  This endpoint is for internal use. Use the V1 file upload endpoints for external integrations.
+</Warning>
+
+### Standard Query (Internal)
+
+```bash POST /answer_question
+curl -X POST https://api.trainly.com/answer_question \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "What is the conclusion?",
+    "chat_id": "chat_abc123",
+    "selected_model": "gpt-4o-mini",
+    "temperature": 0.7,
+    "max_tokens": 1000,
+    "custom_prompt": "Optional custom prompt",
+    "scope_filters": {}
+  }'
+```
+
+### Streaming Query (Internal)
+
+```bash POST /answer_question_stream
+curl -X POST https://api.trainly.com/answer_question_stream \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "Summarize the findings",
+    "chat_id": "chat_abc123",
+    "selected_model": "gpt-4o-mini"
+  }'
+```
+
+## Model Selection
+
+Trainly supports multiple AI models with different capabilities and pricing:
+
+<AccordionGroup>
+  <Accordion title="OpenAI Models">
+    **gpt-4o-mini** (Recommended)
+    - Fastest and most cost-effective
+    - Great for most use cases
+    - 1x credit multiplier (baseline)
+
+    **gpt-4o**
+    - Advanced reasoning capabilities
+    - Better for complex analysis
+    - 15x credit multiplier
+
+    **gpt-4-turbo**
+    - High performance
+    - Extended context window
+    - 12x credit multiplier
+
+    **gpt-4**
+    - Most powerful OpenAI model
+    - Best quality responses
+    - 18x credit multiplier
+  </Accordion>
+
+  <Accordion title="Anthropic Claude Models">
+    **claude-3-haiku**
+    - Fast and efficient
+    - Similar to gpt-4o-mini
+    - 1x credit multiplier
+
+    **claude-3-sonnet**
+    - Balanced performance
+    - Good for analysis tasks
+    - 8x credit multiplier
+
+    **claude-3.5-sonnet**
+    - Latest Sonnet version
+    - Improved capabilities
+    - 10x credit multiplier
+
+    **claude-3-opus**
+    - Most powerful Claude model
+    - Best for complex reasoning
+    - 20x credit multiplier
+  </Accordion>
+
+  <Accordion title="Google Gemini Models">
+    **gemini-pro**
+    - Good general purpose model
+    - 3x credit multiplier
+
+    **gemini-1.5-pro**
+    - Extended context window
+    - 4x credit multiplier
+  </Accordion>
+</AccordionGroup>
+
+## Advanced Features
+
+### Custom Prompts
+
+Override the default system prompt to customize AI behavior:
+
+```json
+{
+  "question": "Analyze the data",
+  "custom_prompt": "You are a data scientist. Analyze the following information with a focus on statistical significance and practical implications. Always cite your sources using [^N] notation."
+}
+```
+
+### Scope Filtering
+
+Filter results to specific subsets of your data:
+
+```json
+{
+  "question": "What features were added?",
+  "scope_filters": {
+    "playlist_id": "playlist_abc",
+    "version": "2.0"
+  }
+}
+```
+
+### Conversation History
+
+The API automatically uses published chat settings including conversation history limits:
+
+- **History Limit**: Configurable per chat (default: 20 messages)
+- **Context Preservation**: Recent messages are included for continuity
+- **Token Management**: Automatically managed to stay within model limits
+
+## Published Settings
+
+<Info>
+  **Important**: External API calls only work with **published** chat settings. You must publish your chat configuration before API access works.
+</Info>
+
+When you publish chat settings, the following are locked for API use:
+
+- **AI Model**: The model selection for all API queries
+- **Temperature**: Response randomness setting
+- **Max Tokens**: Maximum response length
+- **Custom Prompt**: System instructions for the AI
+- **Conversation History Limit**: How many previous messages to include
+- **Context Files**: Which documents are accessible
+
+### Publishing Settings
+
+1. Go to your chat settings
+2. Configure your preferred model, prompt, and other options
+3. Click "Publish Settings"
+4. Enable API access
+5. Generate an API key
+
+<Warning>
+  If settings aren't published, API calls will return: `"This chat has no published settings. Please publish your chat settings first to enable API access."`
+</Warning>
+
+## Citation Format
+
+Trainly uses inline citations in markdown format:
+
+```markdown
+The research shows promising results [^0]. Further analysis revealed [^1][^2].
+
+Key findings include:
+1. Primary outcome was significant [^0]
+2. Secondary effects were observed [^3]
+3. No adverse events reported [^4]
+```
+
+Citations correspond to the `context` array indices in the response.
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Use Streaming" icon="bolt">
+    Streaming provides better UX for long responses
+  </Card>
+  <Card title="Set Appropriate Limits" icon="gauge">
+    Use max_tokens to control response length and costs
+  </Card>
+  <Card title="Handle Rate Limits" icon="shield">
+    Implement exponential backoff for rate limit errors
+  </Card>
+  <Card title="Cache Responses" icon="database">
+    Cache common queries to reduce API calls
+  </Card>
+</CardGroup>
+
+### Error Handling Example
+
+```javascript
+async function queryTrainly(question, maxRetries = 3) {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const response = await fetch(
+        `https://api.trainly.com/v1/${chatId}/answer_question`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ question })
+        }
+      );
+
+      if (response.status === 429) {
+        // Rate limited - wait and retry
+        const retryAfter = response.headers.get('Retry-After') || 60;
+        await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+        continue;
+      }
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      return await response.json();
+
+    } catch (error) {
+      if (i === maxRetries - 1) throw error;
+      await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, i)));
+    }
+  }
+}
+```
+
+## Error Codes
+
+<ResponseField name="400 Bad Request" type="error">
+  Invalid request parameters or unpublished settings
+</ResponseField>
+
+<ResponseField name="401 Unauthorized" type="error">
+  Invalid or missing API key
+</ResponseField>
+
+<ResponseField name="403 Forbidden" type="error">
+  API access not enabled for this chat
+</ResponseField>
+
+<ResponseField name="404 Not Found" type="error">
+  Chat not found
+</ResponseField>
+
+<ResponseField name="413 Payload Too Large" type="error">
+  Request body exceeds size limit
+</ResponseField>
+
+<ResponseField name="429 Too Many Requests" type="error">
+  Rate limit exceeded
+</ResponseField>
+
+<ResponseField name="500 Internal Server Error" type="error">
+  Server error - contact support if persistent
+</ResponseField>
+

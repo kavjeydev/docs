@@ -1,4 +1,170 @@
 ---
-title: 'New Plant'
-openapi: 'WEBHOOK /plant/webhook'
+title: 'Graph Visualization API'
+description: 'Visualize and interact with your knowledge graph'
 ---
+
+## Overview
+
+The Graph API provides endpoints to visualize and interact with the underlying knowledge graph structure. This is useful for understanding document relationships and debugging your RAG implementation.
+
+<Info>
+  Graph endpoints are primarily for internal use and visualization. They expose the Neo4j graph structure.
+</Info>
+
+## Get Graph Data
+
+Retrieve all nodes and relationships for a chat:
+
+```bash
+GET /graph_data/{chat_id}
+```
+
+### Basic Example
+
+```bash
+curl -X GET https://api.trainly.com/graph_data/chat_abc123 \
+  -H "Authorization: Bearer your_api_key"
+```
+
+**Response:**
+
+```json
+{
+  "nodes": [
+    {
+      "id": "123",
+      "labels": ["Document"],
+      "properties": {
+        "id": "doc_abc123",
+        "filename": "research.pdf",
+        "chatId": "chat_abc123",
+        "uploadDate": 1609459200000,
+        "sizeBytes": 524288
+      }
+    },
+    {
+      "id": "124",
+      "labels": ["Chunk"],
+      "properties": {
+        "id": "doc_abc123-0",
+        "text": "Introduction: This research explores...",
+        "chatId": "chat_abc123"
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "id": "456",
+      "source": "123",
+      "target": "124",
+      "type": "HAS_CHUNK",
+      "properties": {
+        "order": 0
+      }
+    },
+    {
+      "id": "457",
+      "source": "124",
+      "target": "125",
+      "type": "EXPLAINS",
+      "properties": {
+        "confidence": 0.92,
+        "ai_generated": true
+      }
+    }
+  ]
+}
+```
+
+## Relationship Types
+
+Trainly creates various relationship types automatically:
+
+<AccordionGroup>
+  <Accordion title="HAS_CHUNK">
+    **Direction**: Document → Chunk
+
+    Links documents to their text chunks.
+  </Accordion>
+
+  <Accordion title="NEXT">
+    **Direction**: Chunk → Chunk
+
+    Sequential relationship preserving document order.
+  </Accordion>
+
+  <Accordion title="EXPLAINS">
+    **Direction**: Chunk → Chunk
+
+    AI-generated: One chunk explains concepts in another.
+  </Accordion>
+
+  <Accordion title="SUPPORTS">
+    **Direction**: Chunk → Chunk
+
+    AI-generated: One chunk provides evidence for another.
+  </Accordion>
+</AccordionGroup>
+
+## Node Operations
+
+### Get Node Details
+
+```bash
+GET /node_details/{node_id}
+```
+
+### Update Node
+
+```bash
+PUT /update_node/{node_id}
+```
+
+### Delete Node
+
+```bash
+DELETE /delete_node/{node_id}
+```
+
+## Relationship Operations
+
+### Create Relationship
+
+```bash
+POST /create_relationship
+```
+
+### Update Relationship
+
+```bash
+PUT /update_relationship/{relationship_id}
+```
+
+### Delete Relationship
+
+```bash
+DELETE /delete_relationship/{relationship_id}
+```
+
+## Visualization Examples
+
+### D3.js Force Graph
+
+```javascript
+async function renderGraph(chatId) {
+  const response = await fetch(
+    `https://api.trainly.com/graph_data/${chatId}`
+  );
+  const data = await response.json();
+
+  // Create D3 force simulation
+  const simulation = d3.forceSimulation(data.nodes)
+    .force('link', d3.forceLink(data.relationships))
+    .force('charge', d3.forceManyBody())
+    .force('center', d3.forceCenter());
+
+  // Render visualization...
+}
+```
+
+See the complete endpoint documentation for detailed examples.

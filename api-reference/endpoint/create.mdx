@@ -1,4 +1,204 @@
 ---
-title: 'Create Plant'
-openapi: 'POST /plants'
+title: "Query Endpoint Examples"
+description: "Common query endpoint examples and use cases"
 ---
+
+## Standard Query
+
+Ask questions about your documents with AI-powered responses:
+
+```bash
+POST /v1/{chat_id}/answer_question
+```
+
+### Basic Example
+
+```bash
+curl -X POST https://api.trainly.com/v1/chat_abc123/answer_question \
+  -H "Authorization: Bearer tk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "What are the main findings?"
+  }'
+```
+
+### Advanced Query with Custom Settings
+
+```bash
+curl -X POST https://api.trainly.com/v1/chat_abc123/answer_question \
+  -H "Authorization: Bearer tk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "Explain the methodology in detail",
+    "selected_model": "gpt-4o",
+    "temperature": 0.3,
+    "max_tokens": 2000,
+    "custom_prompt": "You are a research analyst. Provide detailed technical explanations."
+  }'
+```
+
+### Query with Scope Filters
+
+Filter results to specific documents:
+
+```bash
+curl -X POST https://api.trainly.com/v1/chat_abc123/answer_question \
+  -H "Authorization: Bearer tk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "What features are in version 2.0?",
+    "scope_filters": {
+      "version": "2.0",
+      "environment": "production"
+    }
+  }'
+```
+
+## Streaming Query
+
+Get real-time streaming responses:
+
+```bash
+POST /v1/{chat_id}/answer_question_stream
+```
+
+### Streaming Example
+
+```bash
+curl -X POST https://api.trainly.com/v1/chat_abc123/answer_question_stream \
+  -H "Authorization: Bearer tk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -H "Accept: text/event-stream" \
+  -d '{
+    "question": "Summarize the key points",
+    "selected_model": "gpt-4o-mini"
+  }'
+```
+
+### Handling Streaming Events
+
+```javascript
+const eventSource = new EventSource(
+  "https://api.trainly.com/v1/chat_abc123/answer_question_stream",
+  {
+    headers: {
+      Authorization: "Bearer tk_your_api_key",
+    },
+  },
+);
+
+eventSource.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+
+  if (data.type === "content") {
+    // Append text chunk to display
+    appendText(data.data);
+  } else if (data.type === "end") {
+    // Stream complete
+    eventSource.close();
+  }
+};
+```
+
+## V1 User Query
+
+Query with OAuth authentication:
+
+```bash
+POST /v1/me/chats/query
+```
+
+### OAuth Example
+
+```bash
+curl -X POST https://api.trainly.com/v1/me/chats/query \
+  -H "Authorization: Bearer <USER_OAUTH_ID_TOKEN>" \
+  -H "X-App-ID: app_your_app_id" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "messages=[{\"role\":\"user\",\"content\":\"What is in my documents?\"}]" \
+  -d "response_tokens=200"
+```
+
+## Response Examples
+
+### Successful Response
+
+```json
+{
+  "answer": "The main findings are:\n\n1. Primary hypothesis confirmed [^0]\n2. Secondary effects observed [^1]\n3. Recommendations for future research [^2]",
+  "context": [
+    {
+      "chunk_id": "doc1_chunk_0",
+      "chunk_text": "The primary hypothesis states...",
+      "score": 0.94
+    },
+    {
+      "chunk_id": "doc1_chunk_5",
+      "chunk_text": "Secondary observations...",
+      "score": 0.89
+    }
+  ],
+  "chat_id": "chat_abc123",
+  "model": "gpt-4o-mini",
+  "usage": {
+    "prompt_tokens": 1250,
+    "completion_tokens": 342,
+    "total_tokens": 1592
+  }
+}
+```
+
+### Error Response
+
+```json
+{
+  "detail": "This chat has no published settings. Please publish your chat settings first to enable API access."
+}
+```
+
+## Common Use Cases
+
+### Research Q&A
+
+```bash
+{
+  "question": "What are the limitations of this study?",
+  "selected_model": "gpt-4o",
+  "custom_prompt": "Focus on methodology and potential biases"
+}
+```
+
+### Code Documentation
+
+```bash
+{
+  "question": "How do I implement the authentication flow?",
+  "scope_filters": {
+    "file_type": "documentation",
+    "version": "latest"
+  }
+}
+```
+
+### Legal Document Analysis
+
+```bash
+{
+  "question": "What are the key obligations in this contract?",
+  "selected_model": "claude-3-opus",
+  "temperature": 0.1,
+  "max_tokens": 3000
+}
+```
+
+### Customer Support
+
+```bash
+{
+  "question": "How do I reset my password?",
+  "scope_filters": {
+    "category": "help_docs",
+    "language": "en"
+  }
+}
+```

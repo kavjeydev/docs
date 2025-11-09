@@ -1,33 +1,205 @@
 ---
-title: 'Introduction'
-description: 'Example section for showcasing API endpoints'
+title: "API Reference"
+description: "Complete API documentation for Trainly GraphRAG platform"
 ---
 
+## Overview
+
+Trainly provides a comprehensive GraphRAG (Graph Retrieval-Augmented Generation) API that enables you to build intelligent applications with privacy-first document processing and AI-powered question answering.
+
+## API Architecture
+
+The Trainly API is organized into several major categories:
+
+<CardGroup cols={2}>
+  <Card
+    title="V1 Trusted Issuer API"
+    icon="shield-check"
+    href="/api-reference/v1-authentication"
+  >
+    OAuth-based authentication for external applications with complete user data
+    isolation
+  </Card>
+  <Card title="Chat API" icon="message" href="/api-reference/chat-api">
+    Query and interact with your knowledge base using AI models
+  </Card>
+  <Card
+    title="File Management"
+    icon="file"
+    href="/api-reference/file-management"
+  >
+    Upload, process, and manage documents with automatic embedding generation
+  </Card>
+  <Card
+    title="Scope Management"
+    icon="filter"
+    href="/api-reference/scope-management"
+  >
+    Advanced data filtering with custom scopes for multi-tenant applications
+  </Card>
+</CardGroup>
+
+## Authentication Methods
+
+Trainly supports multiple authentication approaches depending on your use case:
+
+### 1. V1 Trusted Issuer Authentication (Recommended)
+
+For external applications that want to integrate with Trainly while maintaining complete user privacy:
+
+```bash
+# User authenticates with their OAuth provider (Clerk, Auth0, etc.)
+# Your app gets an ID token from the OAuth provider
+# Send that token to Trainly for validation
+
+curl -X POST https://api.trainly.com/v1/me/chats/query \
+  -H "Authorization: Bearer <USER_OAUTH_ID_TOKEN>" \
+  -H "X-App-ID: app_your_app_id" \
+  -H "Content-Type: application/json" \
+  -d '{"messages": "[{\"role\": \"user\", \"content\": \"What is AI?\"}]"}'
+```
+
 <Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
+  With V1 auth, users maintain complete control over their data. Files are
+  stored in permanent private subchats that only they can access.
 </Note>
 
-## Welcome
+### 2. Chat API Keys
 
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
+For direct chat access with API keys:
 
-<Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
->
-  View the OpenAPI specification file
-</Card>
+```bash
+curl -X POST https://api.trainly.com/v1/{chat_id}/answer_question \
+  -H "Authorization: Bearer tk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What are the main findings?"}'
+```
 
-## Authentication
+### 3. Privacy-First OAuth (Legacy)
 
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
+For applications requiring stricter privacy controls:
+
+```bash
+# Step 1: Get authorization URL
+# Step 2: User authorizes
+# Step 3: Exchange code for token
+# Step 4: Use token for queries
+```
+
+## Base URLs
+
+<CodeGroup>
+
+```bash Production
+https://api.trainly.com
+```
+
+```bash Development
+http://localhost:8000
+```
+
+</CodeGroup>
+
+## Rate Limiting
+
+All API endpoints are rate-limited to ensure fair usage:
+
+- **Default**: 60 requests per minute per API key
+- **Streaming**: 30 requests per minute per API key
+
+Rate limit headers are included in all responses:
+
+```
+X-RateLimit-Limit: 60
+X-RateLimit-Remaining: 59
+X-RateLimit-Reset: 1609459200
+```
+
+## Response Format
+
+All API responses follow a consistent JSON format:
 
 ```json
-"security": [
-  {
-    "bearerAuth": []
-  }
-]
+{
+  "success": true,
+  "data": {
+    // Response data
+  },
+  "error": null
+}
 ```
+
+Error responses include detailed information:
+
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "code": "INVALID_REQUEST",
+    "message": "Invalid chat_id format",
+    "details": {}
+  }
+}
+```
+
+## Privacy Guarantees
+
+Trainly is built with privacy at its core:
+
+<AccordionGroup>
+  <Accordion title="User Data Isolation">
+    Each user's data is stored in isolated subchats. Developers can only access AI-generated responses, never raw files or documents.
+  </Accordion>
+
+<Accordion title="Citation Filtering">
+  Citations are automatically filtered based on the access method. Direct user
+  access gets full citations, while developer API calls get limited snippets.
+</Accordion>
+
+<Accordion title="Audit Logging">
+  All access attempts are logged for security and compliance purposes.
+</Accordion>
+
+  <Accordion title="GDPR/CCPA Compliance">
+    Users maintain ownership of their data and can request deletion at any time.
+  </Accordion>
+</AccordionGroup>
+
+## SDKs and Libraries
+
+<CardGroup cols={2}>
+  <Card title="JavaScript/TypeScript" icon="js" href="/sdks/javascript">
+    Official SDK for Node.js and browser applications
+  </Card>
+  <Card title="Python" icon="python" href="/sdks/python">
+    Official SDK for Python applications
+  </Card>
+  <Card title="cURL Examples" icon="terminal" href="/api-reference/examples">
+    Complete cURL examples for all endpoints
+  </Card>
+  <Card title="Postman Collection" icon="box" href="/api-reference/postman">
+    Import ready-to-use Postman collection
+  </Card>
+</CardGroup>
+
+## Getting Started
+
+1. **Create an account** at [trainly.com](https://trainly.com)
+2. **Create a chat** and upload some documents
+3. **Enable API access** in chat settings
+4. **Generate an API key** or register your OAuth app
+5. **Make your first API call**
+
+<Card title="Quick Start Guide" icon="rocket" href="/quickstart">
+  Get up and running in 5 minutes
+</Card>
+
+## Support
+
+Need help? We're here for you:
+
+- 📧 Email: support@trainly.com
+- 💬 Discord: [Join our community](https://discord.gg/trainly)
+- 📚 Documentation: [docs.trainly.com](https://docs.trainly.com)
+- 🐛 Bug Reports: [GitHub Issues](https://github.com/trainly/issues)
