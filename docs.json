@@ -1,7 +1,7 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "aspen",
-  "name": "Trainly Starter Kit",
+  "name": "Trainly Documentation",
   "colors": {
     "primary": "#16A34A",
     "light": "#07C983",
@@ -15,18 +15,11 @@
         "groups": [
           {
             "group": "Getting started",
-            "pages": [
-              "index",
-              "quickstart",
-              "development"
-            ]
+            "pages": ["index", "quickstart", "development"]
           },
           {
             "group": "Customization",
-            "pages": [
-              "essentials/settings",
-              "essentials/navigation"
-            ]
+            "pages": ["essentials/settings", "essentials/navigation"]
           },
           {
             "group": "Writing content",
@@ -51,18 +44,51 @@
         "tab": "API reference",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Overview",
+            "pages": ["api-reference/introduction"]
+          },
+          {
+            "group": "Authentication",
+            "pages": ["api-reference/v1-authentication"]
+          },
+          {
+            "group": "Core APIs",
             "pages": [
-              "api-reference/introduction"
+              "api-reference/chat-api",
+              "api-reference/file-management",
+              "api-reference/scope-management"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Endpoint Examples",
             "pages": [
-              "api-reference/endpoint/get",
               "api-reference/endpoint/create",
+              "api-reference/endpoint/get",
               "api-reference/endpoint/delete",
               "api-reference/endpoint/webhook"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "SDK Guides",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": ["sdk-quickstart"]
+          },
+          {
+            "group": "SDKs",
+            "pages": ["javascript-sdk", "python-sdk"]
+          },
+          {
+            "group": "Integration",
+            "pages": [
+              "integration-examples",
+              "authentication-guide",
+              "streaming-and-realtime",
+              "credits-and-pricing",
+              "best-practices"
             ]
           }
         ]
@@ -71,14 +97,19 @@
     "global": {
       "anchors": [
         {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
+          "anchor": "API Reference",
+          "href": "/api-reference/introduction",
           "icon": "book-open-cover"
         },
         {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
+          "anchor": "Community",
+          "href": "https://discord.gg/trainly",
+          "icon": "discord"
+        },
+        {
+          "anchor": "GitHub",
+          "href": "https://github.com/trainly",
+          "icon": "github"
         }
       ]
     }
@@ -91,32 +122,37 @@
     "links": [
       {
         "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "href": "mailto:support@trainly.com"
+      },
+      {
+        "label": "GitHub",
+        "href": "https://github.com/trainly"
       }
     ],
     "primary": {
       "type": "button",
       "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
+      "href": "https://trainly.com/dashboard"
     }
   },
   "contextual": {
     "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity",
+      "mcp",
+      "cursor",
+      "vscode"
+    ]
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+      "x": "https://x.com/trainlyai",
+      "github": "https://github.com/trainly",
+      "linkedin": "https://linkedin.com/company/trainly",
+      "discord": "https://discord.gg/trainly"
     }
   }
 }

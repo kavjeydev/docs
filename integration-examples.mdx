@@ -1,0 +1,1603 @@
+---
+title: "Integration Examples"
+description: "Real-world examples and integration patterns for Trainly"
+---
+
+## Overview
+
+This guide provides complete, production-ready examples of integrating Trainly into various types of applications.
+
+<CardGroup cols={2}>
+  <Card title="Web Applications" icon="globe">
+    React, Next.js, Vue integration examples
+  </Card>
+  <Card title="Backend Services" icon="server">
+    Node.js, Python, API integrations
+  </Card>
+  <Card title="Mobile Apps" icon="mobile">
+    React Native and mobile patterns
+  </Card>
+  <Card title="CLI Tools" icon="terminal">
+    Command-line interface examples
+  </Card>
+</CardGroup>
+
+## Complete Web Application
+
+### Next.js 14 with App Router
+
+Full-featured document chat application with file uploads:
+
+```typescript
+// app/page.tsx
+'use client';
+
+import { useState } from 'react';
+import { ChatInterface } from '@/components/ChatInterface';
+import { FileUploader } from '@/components/FileUploader';
+
+export default function Home() {
+  const [chatId, setChatId] = useState<string>('chat_abc123');
+
+  return (
+    <main className="container mx-auto p-4">
+      <h1 className="text-3xl font-bold mb-8">Document Chat</h1>
+
+      <div className="grid grid-cols-2 gap-8">
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Upload Documents</h2>
+          <FileUploader chatId={chatId} />
+        </div>
+
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Ask Questions</h2>
+          <ChatInterface chatId={chatId} />
+        </div>
+      </div>
+    </main>
+  );
+}
+```
+
+```typescript
+// components/ChatInterface.tsx
+'use client';
+
+import { useState, useRef, useEffect } from 'react';
+import { Message, ChatMessage } from './ChatMessage';
+
+interface ChatInterfaceProps {
+  chatId: string;
+}
+
+export function ChatInterface({ chatId }: ChatInterfaceProps) {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(scrollToBottom, [messages]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+
+    if (!input.trim() || loading) return;
+
+    const userMessage: Message = {
+      role: 'user',
+      content: input,
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
+    setLoading(true);
+
+    try {
+      // Stream response from your API
+      const response = await fetch('/api/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: input, chatId })
+      });
+
+      if (!response.ok) throw new Error('Query failed');
+
+      const data = await response.json();
+
+      const aiMessage: Message = {
+        role: 'assistant',
+        content: data.answer,
+        context: data.context,
+        timestamp: new Date()
+      };
+
+      setMessages(prev => [...prev, aiMessage]);
+
+    } catch (error) {
+      console.error('Query failed:', error);
+
+      const errorMessage: Message = {
+        role: 'assistant',
+        content: 'Sorry, I encountered an error. Please try again.',
+        timestamp: new Date()
+      };
+
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col h-[600px]">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.map((message, i) => (
+          <ChatMessage key={i} message={message} />
+        ))}
+        <div ref={messagesEndRef} />
+      </div>
+
+      <form onSubmit={handleSubmit} className="p-4 border-t">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Ask a question..."
+            disabled={loading}
+            className="flex-1 px-4 py-2 border rounded"
+          />
+          <button
+            type="submit"
+            disabled={loading || !input.trim()}
+            className="px-6 py-2 bg-blue-500 text-white rounded disabled:opacity-50"
+          >
+            {loading ? 'Sending...' : 'Send'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+```
+
+```typescript
+// components/FileUploader.tsx
+'use client';
+
+import { useState } from 'react';
+import { useDropzone } from 'react-dropzone';
+
+interface FileUploaderProps {
+  chatId: string;
+}
+
+export function FileUploader({ chatId }: FileUploaderProps) {
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    accept: {
+      'application/pdf': ['.pdf'],
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+      'text/plain': ['.txt']
+    },
+    maxSize: 5 * 1024 * 1024, // 5MB
+    onDrop: async (acceptedFiles) => {
+      setUploading(true);
+
+      for (const file of acceptedFiles) {
+        try {
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('chatId', chatId);
+
+          const xhr = new XMLHttpRequest();
+
+          xhr.upload.addEventListener('progress', (e) => {
+            if (e.lengthComputable) {
+              setUploadProgress((e.loaded / e.total) * 100);
+            }
+          });
+
+          await new Promise((resolve, reject) => {
+            xhr.addEventListener('load', () => {
+              if (xhr.status === 200) resolve(xhr.response);
+              else reject(new Error(`Upload failed: ${xhr.status}`));
+            });
+
+            xhr.addEventListener('error', () => reject(new Error('Upload error')));
+
+            xhr.open('POST', '/api/upload');
+            xhr.send(formData);
+          });
+
+          console.log(`Uploaded: ${file.name}`);
+
+        } catch (error) {
+          console.error(`Failed to upload ${file.name}:`, error);
+        }
+      }
+
+      setUploading(false);
+      setUploadProgress(0);
+    }
+  });
+
+  return (
+    <div>
+      <div
+        {...getRootProps()}
+        className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer
+          ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}
+          ${uploading ? 'opacity-50 pointer-events-none' : ''}`}
+      >
+        <input {...getInputProps()} />
+        {uploading ? (
+          <div>
+            <p>Uploading...</p>
+            <div className="w-full bg-gray-200 rounded-full h-2.5 mt-4">
+              <div
+                className="bg-blue-600 h-2.5 rounded-full transition-all"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+          </div>
+        ) : isDragActive ? (
+          <p>Drop files here...</p>
+        ) : (
+          <div>
+            <p>Drag & drop files here, or click to select</p>
+            <p className="text-sm text-gray-500 mt-2">
+              Supports PDF, DOCX, TXT (max 5MB)
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+```
+
+```typescript
+// app/api/query/route.ts
+import { TrainlyClient } from '@trainly/sdk';
+import { NextRequest, NextResponse } from 'next/server';
+
+const trainly = new TrainlyClient({
+  apiKey: process.env.TRAINLY_API_KEY!,
+  chatId: process.env.TRAINLY_CHAT_ID!
+});
+
+export async function POST(request: NextRequest) {
+  try {
+    const { question, chatId } = await request.json();
+
+    const response = await trainly.query({
+      question,
+      model: 'gpt-4o-mini'
+    });
+
+    return NextResponse.json({
+      answer: response.answer,
+      context: response.context.slice(0, 5), // Limit citations
+      usage: response.usage
+    });
+
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error.message },
+      { status: error.status || 500 }
+    );
+  }
+}
+```
+
+```typescript
+// app/api/upload/route.ts
+import { TrainlyClient } from '@trainly/sdk';
+import { NextRequest, NextResponse } from 'next/server';
+
+const trainly = new TrainlyClient({
+  apiKey: process.env.TRAINLY_API_KEY!,
+  chatId: process.env.TRAINLY_CHAT_ID!
+});
+
+export async function POST(request: NextRequest) {
+  try {
+    const formData = await request.formData();
+    const file = formData.get('file') as File;
+    const chatId = formData.get('chatId') as string;
+
+    if (!file) {
+      return NextResponse.json(
+        { error: 'No file provided' },
+        { status: 400 }
+      );
+    }
+
+    // Convert file to buffer
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
+    // Upload to Trainly
+    const result = await trainly.uploadFile({
+      file: buffer,
+      filename: file.name
+    });
+
+    return NextResponse.json(result);
+
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error.message },
+      { status: error.status || 500 }
+    );
+  }
+}
+```
+
+## Customer Support Chatbot
+
+### Python Flask Backend
+
+```python
+from flask import Flask, request, jsonify, session
+from flask_cors import CORS
+from trainly import TrainlyClient
+import os
+
+app = Flask(__name__)
+app.secret_key = os.getenv("FLASK_SECRET_KEY")
+CORS(app)
+
+trainly = TrainlyClient(
+    api_key=os.getenv("TRAINLY_API_KEY"),
+    chat_id=os.getenv("TRAINLY_CHAT_ID")
+)
+
+# Store conversation history per session
+conversations = {}
+
+@app.route("/api/support/query", methods=["POST"])
+def support_query():
+    try:
+        data = request.get_json()
+        question = data.get("question")
+        session_id = session.get("session_id")
+
+        if not question:
+            return jsonify({"error": "Question is required"}), 400
+
+        # Get conversation history
+        history = conversations.get(session_id, [])
+
+        # Add current question to history
+        history.append({"role": "user", "content": question})
+
+        # Query Trainly with context
+        response = trainly.query(
+            question=question,
+            custom_prompt="""You are a helpful customer support assistant.
+            Answer questions based on the documentation provided.
+            If you don't know the answer, say so and suggest contacting human support.""",
+            scope_filters={
+                "category": "support_docs",
+                "language": "en"
+            }
+        )
+
+        # Add response to history
+        history.append({"role": "assistant", "content": response.answer})
+        conversations[session_id] = history[-10:]  # Keep last 10 messages
+
+        return jsonify({
+            "answer": response.answer,
+            "citations": [
+                {
+                    "text": c.chunk_text[:150] + "...",
+                    "relevance": f"{c.score * 100:.0f}%"
+                }
+                for c in response.context[:3]
+            ],
+            "suggested_actions": extract_actions(response.answer)
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+def extract_actions(answer: str) -> list:
+    """Extract suggested actions from answer"""
+    actions = []
+
+    if "contact support" in answer.lower():
+        actions.append({
+            "label": "Contact Human Support",
+            "action": "contact_support"
+        })
+
+    if "documentation" in answer.lower():
+        actions.append({
+            "label": "View Documentation",
+            "action": "view_docs"
+        })
+
+    return actions
+
+if __name__ == "__main__":
+    app.run(debug=True)
+```
+
+## Multi-Tenant SaaS Application
+
+### Tenant-Isolated Document System
+
+```typescript
+// lib/trainly-tenant.ts
+import { TrainlyClient } from '@trainly/sdk';
+
+interface TenantConfig {
+  tenantId: string;
+  workspaceId: string;
+  userId: string;
+}
+
+export class TenantTrainlyClient {
+  private client: TrainlyClient;
+  private config: TenantConfig;
+
+  constructor(config: TenantConfig) {
+    this.config = config;
+    this.client = new TrainlyClient({
+      apiKey: process.env.TRAINLY_API_KEY!,
+      chatId: process.env.TRAINLY_CHAT_ID!
+    });
+  }
+
+  async query(question: string) {
+    return await this.client.query({
+      question,
+      scopeFilters: {
+        tenant_id: this.config.tenantId,
+        workspace_id: this.config.workspaceId,
+        access_level: 'member'
+      }
+    });
+  }
+
+  async uploadDocument(file: File, metadata: Record<string, any>) {
+    return await this.client.uploadFile({
+      file,
+      scopeValues: {
+        tenant_id: this.config.tenantId,
+        workspace_id: this.config.workspaceId,
+        uploaded_by: this.config.userId,
+        ...metadata
+      }
+    });
+  }
+
+  async listDocuments() {
+    const files = await this.client.listFiles();
+
+    // Filter by tenant (additional client-side check)
+    return files.files.filter(file =>
+      file.file_id.includes(this.config.tenantId)
+    );
+  }
+
+  async deleteDocument(fileId: string) {
+    // Verify file belongs to tenant before deleting
+    const files = await this.listDocuments();
+    const file = files.find(f => f.file_id === fileId);
+
+    if (!file) {
+      throw new Error('File not found or access denied');
+    }
+
+    return await this.client.deleteFile(fileId);
+  }
+}
+
+// Usage
+const tenantClient = new TenantTrainlyClient({
+  tenantId: 'tenant_acme',
+  workspaceId: 'ws_engineering',
+  userId: currentUser.id
+});
+
+const response = await tenantClient.query(
+  'What are our Q4 goals?'
+);
+```
+
+```typescript
+// app/api/tenant/query/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { TenantTrainlyClient } from '@/lib/trainly-tenant';
+import { getCurrentUser } from '@/lib/auth';
+
+export async function POST(request: NextRequest) {
+  try {
+    // Get authenticated user
+    const user = await getCurrentUser(request);
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const { question } = await request.json();
+
+    // Create tenant-scoped client
+    const trainly = new TenantTrainlyClient({
+      tenantId: user.tenantId,
+      workspaceId: user.workspaceId,
+      userId: user.id
+    });
+
+    // Query with automatic tenant isolation
+    const response = await trainly.query(question);
+
+    return NextResponse.json(response);
+
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error.message },
+      { status: 500 }
+    );
+  }
+}
+```
+
+## Content Platform with Playlists
+
+### Music/Content Discovery App
+
+```python
+# app.py
+from flask import Flask, request, jsonify
+from trainly import TrainlyClient
+from dataclasses import dataclass
+from typing import List
+import os
+
+app = Flask(__name__)
+
+trainly = TrainlyClient(
+    api_key=os.getenv("TRAINLY_API_KEY"),
+    chat_id=os.getenv("TRAINLY_CHAT_ID")
+)
+
+@dataclass
+class Playlist:
+    id: str
+    name: str
+    description: str
+
+class ContentService:
+    """Service for managing content and playlists"""
+
+    def __init__(self, trainly_client: TrainlyClient):
+        self.trainly = trainly_client
+
+    def upload_song(self, song_file, playlist_id: str, metadata: dict):
+        """Upload song lyrics/info to a playlist"""
+        return self.trainly.upload_file(
+            file=song_file,
+            scope_values={
+                "playlist_id": playlist_id,
+                "artist": metadata.get("artist"),
+                "genre": metadata.get("genre"),
+                "year": metadata.get("year"),
+                "is_explicit": metadata.get("is_explicit", False)
+            }
+        )
+
+    def search_playlist(self, playlist_id: str, query: str):
+        """Search within a specific playlist"""
+        return self.trainly.query(
+            question=query,
+            scope_filters={
+                "playlist_id": playlist_id
+            },
+            custom_prompt="""You are a music expert. Help users discover songs
+            based on their queries. Mention song titles, artists, and relevant details."""
+        )
+
+    def find_similar_songs(self, song_title: str, playlist_id: str):
+        """Find songs similar to a given song"""
+        return self.trainly.query(
+            question=f"Find songs similar to {song_title} in terms of mood, theme, or style",
+            scope_filters={"playlist_id": playlist_id},
+            temperature=0.8  # More creative for recommendations
+        )
+
+    def get_playlist_summary(self, playlist_id: str):
+        """Generate a summary of playlist contents"""
+        return self.trainly.query(
+            question="Summarize all the songs in this playlist, including themes, genres, and overall mood",
+            scope_filters={"playlist_id": playlist_id}
+        )
+
+content_service = ContentService(trainly)
+
+@app.route("/api/playlists/<playlist_id>/search", methods=["POST"])
+def search_playlist(playlist_id):
+    try:
+        data = request.get_json()
+        query = data.get("query")
+
+        response = content_service.search_playlist(playlist_id, query)
+
+        return jsonify({
+            "results": response.answer,
+            "sources": [
+                {
+                    "text": c.chunk_text,
+                    "score": c.score
+                }
+                for c in response.context[:5]
+            ]
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/playlists/<playlist_id>/similar", methods=["POST"])
+def find_similar(playlist_id):
+    try:
+        data = request.get_json()
+        song_title = data.get("song_title")
+
+        response = content_service.find_similar_songs(song_title, playlist_id)
+
+        return jsonify({"recommendations": response.answer})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/playlists/<playlist_id>/upload", methods=["POST"])
+def upload_song(playlist_id):
+    try:
+        if "file" not in request.files:
+            return jsonify({"error": "No file provided"}), 400
+
+        file = request.files["file"]
+        metadata = request.form.to_dict()
+
+        result = content_service.upload_song(
+            song_file=file.read(),
+            playlist_id=playlist_id,
+            metadata=metadata
+        )
+
+        return jsonify({
+            "success": True,
+            "file_id": result.file_id,
+            "filename": result.filename
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+if __name__ == "__main__":
+    app.run(debug=True)
+```
+
+## Research Paper Analyzer
+
+### Academic Paper Q&A System
+
+```python
+#!/usr/bin/env python3
+"""
+Research Paper Analyzer
+Analyzes academic papers and answers questions about them
+"""
+
+from trainly import TrainlyClient
+from pathlib import Path
+from typing import List, Dict
+import click
+from rich.console import Console
+from rich.table import Table
+from rich.markdown import Markdown
+import os
+
+console = Console()
+
+class PaperAnalyzer:
+    def __init__(self, api_key: str, chat_id: str):
+        self.trainly = TrainlyClient(
+            api_key=api_key,
+            chat_id=chat_id
+        )
+
+    def upload_paper(self, paper_path: Path, metadata: Dict):
+        """Upload a research paper with metadata"""
+        console.print(f"[cyan]Uploading paper: {paper_path.name}[/cyan]")
+
+        with open(paper_path, "rb") as file:
+            result = self.trainly.upload_file(
+                file=file,
+                filename=paper_path.name,
+                scope_values={
+                    "type": "research_paper",
+                    "year": metadata.get("year"),
+                    "journal": metadata.get("journal"),
+                    "authors": metadata.get("authors"),
+                    "field": metadata.get("field")
+                }
+            )
+
+        console.print(f"[green]✓ Uploaded successfully[/green]")
+        return result
+
+    def analyze_paper(self, file_id: str) -> Dict[str, str]:
+        """Comprehensive analysis of a paper"""
+        analyses = {}
+
+        questions = {
+            "abstract": "What is the abstract or summary of this paper?",
+            "methodology": "What methodology was used in this research?",
+            "findings": "What are the main findings or results?",
+            "limitations": "What are the limitations of this study?",
+            "future_work": "What future work is suggested?"
+        }
+
+        for key, question in questions.items():
+            console.print(f"[dim]Analyzing: {key}...[/dim]")
+            response = self.trainly.query(question=question)
+            analyses[key] = response.answer
+
+        return analyses
+
+    def compare_papers(self, paper_ids: List[str]) -> str:
+        """Compare multiple papers"""
+        return self.trainly.query(
+            question="Compare and contrast the methodologies, findings, and conclusions across all papers",
+            custom_prompt="You are an academic researcher. Provide a detailed comparison."
+        )
+
+    def generate_literature_review(self, field: str) -> str:
+        """Generate literature review for a field"""
+        return self.trainly.query(
+            question=f"Generate a literature review synthesizing all papers in the {field} field",
+            scope_filters={"field": field},
+            model="gpt-4o",  # Use more powerful model
+            max_tokens=3000
+        )
+
+@click.group()
+def cli():
+    """Research Paper Analyzer CLI"""
+    pass
+
+@cli.command()
+@click.argument("paper_path", type=click.Path(exists=True))
+@click.option("--year", type=int, help="Publication year")
+@click.option("--journal", help="Journal name")
+@click.option("--field", help="Research field")
+def upload(paper_path, year, journal, field):
+    """Upload a research paper"""
+    analyzer = PaperAnalyzer(
+        api_key=os.getenv("TRAINLY_API_KEY"),
+        chat_id=os.getenv("TRAINLY_CHAT_ID")
+    )
+
+    metadata = {
+        "year": year,
+        "journal": journal,
+        "field": field
+    }
+
+    result = analyzer.upload_paper(Path(paper_path), metadata)
+    console.print(f"[green]File ID: {result.file_id}[/green]")
+
+@cli.command()
+@click.argument("question")
+def ask(question):
+    """Ask a question about the papers"""
+    analyzer = PaperAnalyzer(
+        api_key=os.getenv("TRAINLY_API_KEY"),
+        chat_id=os.getenv("TRAINLY_CHAT_ID")
+    )
+
+    response = analyzer.trainly.query(question=question)
+
+    console.print("\n[bold green]Answer:[/bold green]")
+    md = Markdown(response.answer)
+    console.print(md)
+
+    if response.context:
+        console.print(f"\n[dim]Based on {len(response.context)} sources[/dim]")
+
+@cli.command()
+@click.argument("field")
+def literature_review(field):
+    """Generate literature review for a field"""
+    analyzer = PaperAnalyzer(
+        api_key=os.getenv("TRAINLY_API_KEY"),
+        chat_id=os.getenv("TRAINLY_CHAT_ID")
+    )
+
+    console.print(f"[cyan]Generating literature review for {field}...[/cyan]")
+
+    response = analyzer.generate_literature_review(field)
+
+    console.print("\n[bold green]Literature Review:[/bold green]")
+    md = Markdown(response.answer)
+    console.print(md)
+
+if __name__ == "__main__":
+    cli()
+```
+
+## E-Commerce Product Search
+
+### Smart Product Discovery
+
+```typescript
+// lib/product-search.ts
+import { TrainlyClient } from '@trainly/sdk';
+
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  price: number;
+}
+
+export class ProductSearchService {
+  private trainly: TrainlyClient;
+
+  constructor() {
+    this.trainly = new TrainlyClient({
+      apiKey: process.env.TRAINLY_API_KEY!,
+      chatId: process.env.TRAINLY_CHAT_ID!
+    });
+  }
+
+  async uploadProduct(product: Product) {
+    // Create product description document
+    const content = `
+Product: ${product.name}
+Category: ${product.category}
+Price: $${product.price}
+Description: ${product.description}
+    `.trim();
+
+    return await this.trainly.uploadText({
+      content,
+      name: `product_${product.id}.txt`,
+      scopeValues: {
+        product_id: product.id,
+        category: product.category,
+        price_range: this.getPriceRange(product.price),
+        in_stock: true
+      }
+    });
+  }
+
+  async searchProducts(query: string, filters?: {
+    category?: string;
+    maxPrice?: number;
+    minPrice?: number;
+  }) {
+    const scopeFilters: Record<string, any> = {
+      in_stock: true
+    };
+
+    if (filters?.category) {
+      scopeFilters.category = filters.category;
+    }
+
+    if (filters?.maxPrice) {
+      scopeFilters.price_range = this.getPriceRange(filters.maxPrice);
+    }
+
+    const response = await this.trainly.query({
+      question: `Find products that match: ${query}`,
+      scopeFilters,
+      customPrompt: `You are a product search assistant. Help users find products
+      based on their needs. List specific product names and key features.`,
+      temperature: 0.5
+    });
+
+    return this.parseProductResults(response.answer, response.context);
+  }
+
+  async getProductRecommendations(productId: string) {
+    return await this.trainly.query({
+      question: `What products are similar to product ${productId}? Recommend complementary products.`,
+      temperature: 0.7,
+      customPrompt: 'Focus on product features and customer needs.'
+    });
+  }
+
+  private getPriceRange(price: number): string {
+    if (price < 50) return 'budget';
+    if (price < 200) return 'mid';
+    if (price < 500) return 'premium';
+    return 'luxury';
+  }
+
+  private parseProductResults(answer: string, context: any[]) {
+    // Extract product mentions from answer
+    const products: string[] = [];
+    const lines = answer.split('\n');
+
+    for (const line of lines) {
+      if (line.includes('Product:') || line.match(/^\d+\./)) {
+        products.push(line.trim());
+      }
+    }
+
+    return {
+      summary: answer,
+      products,
+      confidence: context[0]?.score || 0,
+      sources: context.length
+    };
+  }
+}
+```
+
+## Educational Platform
+
+### Personalized Learning Assistant
+
+```python
+# learning_assistant.py
+from trainly import TrainlyClient
+from typing import List, Dict
+import os
+
+class LearningAssistant:
+    """Personalized learning assistant using Trainly"""
+
+    def __init__(self, user_id: str, course_id: str):
+        self.user_id = user_id
+        self.course_id = course_id
+        self.trainly = TrainlyClient(
+            api_key=os.getenv("TRAINLY_API_KEY"),
+            chat_id=os.getenv("TRAINLY_CHAT_ID")
+        )
+
+    def upload_course_material(self, file_path: str, module_name: str, lesson_number: int):
+        """Upload course material with metadata"""
+        with open(file_path, "rb") as file:
+            return self.trainly.upload_file(
+                file=file,
+                scope_values={
+                    "course_id": self.course_id,
+                    "module": module_name,
+                    "lesson": lesson_number,
+                    "type": "course_material"
+                }
+            )
+
+    def ask_question(self, question: str, module: str = None):
+        """Ask a question about course content"""
+        scope_filters = {
+            "course_id": self.course_id,
+            "type": "course_material"
+        }
+
+        if module:
+            scope_filters["module"] = module
+
+        return self.trainly.query(
+            question=question,
+            scope_filters=scope_filters,
+            custom_prompt="""You are a patient and encouraging teacher.
+            Explain concepts clearly with examples. If the student seems confused,
+            provide additional clarification."""
+        )
+
+    def generate_quiz(self, module: str, num_questions: int = 5):
+        """Generate quiz questions for a module"""
+        return self.trainly.query(
+            question=f"Generate {num_questions} multiple choice quiz questions about this module's content",
+            scope_filters={
+                "course_id": self.course_id,
+                "module": module
+            },
+            model="gpt-4o",
+            temperature=0.6
+        )
+
+    def get_study_summary(self, module: str):
+        """Get a study summary for a module"""
+        return self.trainly.query(
+            question="Create a comprehensive study guide covering all key concepts, definitions, and important points",
+            scope_filters={
+                "course_id": self.course_id,
+                "module": module
+            },
+            max_tokens=2000
+        )
+
+    def explain_concept(self, concept: str):
+        """Explain a specific concept in detail"""
+        return self.trainly.query(
+            question=f"Explain {concept} in detail with examples",
+            scope_filters={"course_id": self.course_id},
+            custom_prompt="""Explain like I'm a beginner. Use simple language
+            and real-world analogies. Include examples.""",
+            temperature=0.5
+        )
+
+# Usage example
+if __name__ == "__main__":
+    assistant = LearningAssistant(
+        user_id="user_123",
+        course_id="cs101"
+    )
+
+    # Upload course materials
+    assistant.upload_course_material(
+        "./materials/lecture1.pdf",
+        module_name="Introduction to Programming",
+        lesson_number=1
+    )
+
+    # Student asks questions
+    response = assistant.ask_question(
+        "What is a variable?",
+        module="Introduction to Programming"
+    )
+
+    print("Answer:", response.answer)
+
+    # Generate quiz
+    quiz = assistant.generate_quiz("Introduction to Programming", num_questions=5)
+    print("\nQuiz:", quiz.answer)
+
+    # Get study summary
+    summary = assistant.get_study_summary("Introduction to Programming")
+    print("\nStudy Guide:", summary.answer)
+```
+
+## Legal Document Analysis
+
+### Contract Review System
+
+```typescript
+// lib/legal-analyzer.ts
+import { TrainlyClient, QueryResponse } from '@trainly/sdk';
+
+interface ContractMetadata {
+  contractId: string;
+  parties: string[];
+  effectiveDate: string;
+  expirationDate?: string;
+  type: string; // 'employment', 'nda', 'service_agreement', etc.
+}
+
+export class LegalAnalyzer {
+  private trainly: TrainlyClient;
+
+  constructor() {
+    this.trainly = new TrainlyClient({
+      apiKey: process.env.TRAINLY_API_KEY!,
+      chatId: process.env.TRAINLY_CHAT_ID!
+    });
+  }
+
+  async uploadContract(file: File, metadata: ContractMetadata) {
+    return await this.trainly.uploadFile({
+      file,
+      scopeValues: {
+        contract_id: metadata.contractId,
+        contract_type: metadata.type,
+        effective_date: metadata.effectiveDate,
+        status: 'active'
+      }
+    });
+  }
+
+  async analyzeObligations(contractId: string): Promise<string> {
+    const response = await this.trainly.query({
+      question: 'List all obligations and responsibilities for each party in this contract',
+      scopeFilters: { contract_id: contractId },
+      model: 'gpt-4o', // Use more powerful model for legal analysis
+      temperature: 0.1, // Very focused for legal accuracy
+      maxTokens: 3000,
+      customPrompt: `You are a legal analyst. Extract obligations precisely.
+      Use bullet points and cite specific sections.`
+    });
+
+    return response.answer;
+  }
+
+  async findTerminationClauses(contractId: string): Promise<string> {
+    return (await this.trainly.query({
+      question: 'What are the termination clauses and conditions for ending this contract?',
+      scopeFilters: { contract_id: contractId },
+      model: 'claude-3-opus', // Alternative model
+      temperature: 0.1
+    })).answer;
+  }
+
+  async checkCompliance(contractId: string, regulation: string): Promise<string> {
+    return (await this.trainly.query({
+      question: `Does this contract comply with ${regulation}? Identify any potential compliance issues.`,
+      scopeFilters: { contract_id: contractId },
+      model: 'gpt-4o',
+      temperature: 0.2
+    })).answer;
+  }
+
+  async compareContracts(contractIds: string[]): Promise<string> {
+    // Don't filter by specific contract - compare all
+    return (await this.trainly.query({
+      question: 'Compare these contracts in terms of terms, obligations, and favorable conditions',
+      model: 'gpt-4o',
+      maxTokens: 4000
+    })).answer;
+  }
+
+  async extractKeyTerms(contractId: string): Promise<Dict<string, any>> {
+    const questions = {
+      payment_terms: 'What are the payment terms and amounts?',
+      duration: 'What is the contract duration?',
+      renewal: 'What are the renewal terms?',
+      liability: 'What are the liability limitations?',
+      ip_rights: 'What intellectual property rights are mentioned?'
+    };
+
+    const terms: Record<string, string> = {};
+
+    for (const [key, question] of Object.entries(questions)) {
+      const response = await this.trainly.query({
+        question,
+        scopeFilters: { contract_id: contractId },
+        temperature: 0.1
+      });
+
+      terms[key] = response.answer;
+    }
+
+    return terms;
+  }
+}
+
+// Usage
+const analyzer = new LegalAnalyzer();
+
+// Upload contract
+await analyzer.uploadContract(contractFile, {
+  contractId: 'contract_2024_001',
+  parties: ['Company A', 'Company B'],
+  effectiveDate: '2024-01-01',
+  expirationDate: '2025-01-01',
+  type: 'service_agreement'
+});
+
+// Analyze obligations
+const obligations = await analyzer.analyzeObligations('contract_2024_001');
+console.log(obligations);
+
+// Check compliance
+const compliance = await analyzer.checkCompliance(
+  'contract_2024_001',
+  'GDPR'
+);
+console.log(compliance);
+```
+
+## Slack Bot Integration
+
+### Document Q&A Slack Bot
+
+```python
+# slack_bot.py
+from slack_bolt import App
+from slack_bolt.adapter.socket_mode import SocketModeHandler
+from trainly import TrainlyClient
+import os
+
+app = App(token=os.getenv("SLACK_BOT_TOKEN"))
+
+trainly = TrainlyClient(
+    api_key=os.getenv("TRAINLY_API_KEY"),
+    chat_id=os.getenv("TRAINLY_CHAT_ID")
+)
+
+@app.message("ask")
+def handle_ask_message(message, say):
+    """Handle 'ask' command in Slack"""
+    try:
+        # Extract question from message
+        text = message.get("text", "")
+        question = text.replace("ask", "", 1).strip()
+
+        if not question:
+            say("Please provide a question. Example: `ask What is the refund policy?`")
+            return
+
+        # Show typing indicator
+        say("🤔 Searching documents...")
+
+        # Query Trainly
+        response = trainly.query(
+            question=question,
+            scope_filters={"visibility": "team"}
+        )
+
+        # Format response for Slack
+        blocks = [
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"*Answer:*\n{response.answer}"
+                }
+            }
+        ]
+
+        # Add citations
+        if response.context:
+            citations_text = "\n".join([
+                f"• {c.chunk_text[:100]}... (relevance: {c.score * 100:.0f}%)"
+                for c in response.context[:3]
+            ])
+
+            blocks.append({
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"*Sources:*\n{citations_text}"
+                }
+            })
+
+        say(blocks=blocks)
+
+    except Exception as e:
+        say(f"❌ Error: {str(e)}")
+
+@app.event("file_shared")
+def handle_file_upload(event, say):
+    """Auto-upload files shared in channel"""
+    try:
+        file_id = event.get("file_id")
+
+        # Download file from Slack
+        file_info = app.client.files_info(file=file_id)
+        file_url = file_info["file"]["url_private"]
+
+        # Upload to Trainly
+        # ... implementation
+
+        say(f"✅ Document uploaded and indexed!")
+
+    except Exception as e:
+        say(f"❌ Failed to upload: {str(e)}")
+
+if __name__ == "__main__":
+    handler = SocketModeHandler(app, os.getenv("SLACK_APP_TOKEN"))
+    handler.start()
+```
+
+## Analytics Dashboard
+
+### Document Analytics with Trainly
+
+```python
+# analytics_dashboard.py
+from trainly import TrainlyClient
+from flask import Flask, render_template
+import plotly.graph_objs as go
+import plotly.express as px
+from datetime import datetime, timedelta
+import pandas as pd
+import os
+
+app = Flask(__name__)
+
+trainly = TrainlyClient(
+    api_key=os.getenv("TRAINLY_API_KEY"),
+    chat_id=os.getenv("TRAINLY_CHAT_ID")
+)
+
+class DocumentAnalytics:
+    def __init__(self, trainly_client: TrainlyClient):
+        self.trainly = trainly_client
+
+    def get_document_stats(self):
+        """Get statistics about uploaded documents"""
+        files = self.trainly.list_files()
+
+        # Calculate statistics
+        total_size = files.total_size_bytes
+        total_chunks = sum(f.chunk_count for f in files.files)
+        avg_chunks = total_chunks / len(files.files) if files.files else 0
+
+        # Group by upload date
+        uploads_by_date = {}
+        for file in files.files:
+            date = datetime.fromisoformat(file.upload_date).date()
+            uploads_by_date[date] = uploads_by_date.get(date, 0) + 1
+
+        return {
+            "total_files": files.total_files,
+            "total_size_mb": total_size / (1024 * 1024),
+            "total_chunks": total_chunks,
+            "avg_chunks_per_file": avg_chunks,
+            "uploads_by_date": uploads_by_date,
+            "recent_files": files.files[:10]
+        }
+
+    def generate_insights(self):
+        """Generate AI insights about document collection"""
+        return self.trainly.query(
+            question="""Analyze the document collection and provide insights:
+            1. What topics are covered?
+            2. What are the main themes?
+            3. Are there any gaps in the content?
+            4. What additional documents would be helpful?""",
+            model="gpt-4o",
+            max_tokens=2000
+        )
+
+analytics = DocumentAnalytics(trainly)
+
+@app.route("/")
+def dashboard():
+    stats = analytics.get_document_stats()
+    insights = analytics.generate_insights()
+
+    # Create visualizations
+    upload_dates = list(stats["uploads_by_date"].keys())
+    upload_counts = list(stats["uploads_by_date"].values())
+
+    fig = px.line(
+        x=upload_dates,
+        y=upload_counts,
+        title="Document Uploads Over Time",
+        labels={"x": "Date", "y": "Number of Uploads"}
+    )
+
+    graph_json = fig.to_json()
+
+    return render_template(
+        "dashboard.html",
+        stats=stats,
+        insights=insights.answer,
+        graph=graph_json
+    )
+
+if __name__ == "__main__":
+    app.run(debug=True)
+```
+
+## Discord Bot
+
+### Community Knowledge Bot
+
+```javascript
+// discord-bot.js
+const { Client, GatewayIntentBits } = require('discord.js');
+const { TrainlyClient } = require('@trainly/sdk');
+
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent
+  ]
+});
+
+const trainly = new TrainlyClient({
+  apiKey: process.env.TRAINLY_API_KEY,
+  chatId: process.env.TRAINLY_CHAT_ID
+});
+
+client.on('ready', () => {
+  console.log(`Logged in as ${client.user.tag}`);
+});
+
+client.on('messageCreate', async (message) => {
+  // Ignore bot messages
+  if (message.author.bot) return;
+
+  // Check for !ask command
+  if (message.content.startsWith('!ask ')) {
+    const question = message.content.slice(5).trim();
+
+    if (!question) {
+      await message.reply('Please provide a question. Example: `!ask What is the server policy?`');
+      return;
+    }
+
+    try {
+      // Send typing indicator
+      await message.channel.sendTyping();
+
+      // Query Trainly
+      const response = await trainly.query({
+        question,
+        scopeFilters: {
+          server_id: message.guildId,
+          visibility: 'public'
+        }
+      });
+
+      // Send response
+      await message.reply({
+        content: response.answer,
+        allowedMentions: { repliedUser: false }
+      });
+
+      // Add reactions for feedback
+      await message.react('👍');
+      await message.react('👎');
+
+    } catch (error) {
+      console.error('Query failed:', error);
+      await message.reply('Sorry, I encountered an error processing your question.');
+    }
+  }
+
+  // Check for file uploads
+  if (message.attachments.size > 0) {
+    for (const attachment of message.attachments.values()) {
+      if (attachment.name.endsWith('.pdf') || attachment.name.endsWith('.txt')) {
+        try {
+          // Download file
+          const response = await fetch(attachment.url);
+          const buffer = await response.arrayBuffer();
+
+          // Upload to Trainly
+          await trainly.uploadFile({
+            file: Buffer.from(buffer),
+            filename: attachment.name,
+            scopeValues: {
+              server_id: message.guildId,
+              channel_id: message.channelId,
+              uploaded_by: message.author.id
+            }
+          });
+
+          await message.react('✅');
+
+        } catch (error) {
+          console.error('Upload failed:', error);
+          await message.react('❌');
+        }
+      }
+    }
+  }
+});
+
+client.login(process.env.DISCORD_BOT_TOKEN);
+```
+
+## API Wrapper Service
+
+### Unified API Gateway
+
+```typescript
+// server.ts
+import express from 'express';
+import { TrainlyClient } from '@trainly/sdk';
+import rateLimit from 'express-rate-limit';
+import helmet from 'helmet';
+import cors from 'cors';
+
+const app = express();
+
+app.use(helmet());
+app.use(cors());
+app.use(express.json());
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 100, // Limit each IP to 100 requests per minute
+  message: 'Too many requests, please try again later.'
+});
+
+app.use('/api/', limiter);
+
+// Multi-tenant Trainly clients
+const trainlyClients = new Map<string, TrainlyClient>();
+
+function getTrainlyClient(tenantId: string): TrainlyClient {
+  if (!trainlyClients.has(tenantId)) {
+    trainlyClients.set(tenantId, new TrainlyClient({
+      apiKey: process.env[`TRAINLY_API_KEY_${tenantId.toUpperCase()}`]!,
+      chatId: process.env[`TRAINLY_CHAT_ID_${tenantId.toUpperCase()}`]!
+    }));
+  }
+
+  return trainlyClients.get(tenantId)!;
+}
+
+// Middleware to extract tenant
+app.use((req, res, next) => {
+  const tenantId = req.headers['x-tenant-id'] as string;
+
+  if (!tenantId) {
+    return res.status(400).json({ error: 'X-Tenant-ID header required' });
+  }
+
+  req.tenantId = tenantId;
+  next();
+});
+
+// Query endpoint
+app.post('/api/query', async (req, res) => {
+  try {
+    const { question, model, temperature } = req.body;
+    const trainly = getTrainlyClient(req.tenantId);
+
+    const response = await trainly.query({
+      question,
+      model: model || 'gpt-4o-mini',
+      temperature: temperature || 0.7,
+      scopeFilters: {
+        tenant_id: req.tenantId
+      }
+    });
+
+    res.json(response);
+
+  } catch (error: any) {
+    res.status(error.status || 500).json({ error: error.message });
+  }
+});
+
+// Upload endpoint
+app.post('/api/upload', async (req, res) => {
+  try {
+    const trainly = getTrainlyClient(req.tenantId);
+
+    // Implementation for file upload
+    // ...
+
+    res.json({ success: true });
+
+  } catch (error: any) {
+    res.status(error.status || 500).json({ error: error.message });
+  }
+});
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ status: 'healthy', timestamp: Date.now() });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`API Gateway running on port ${PORT}`);
+});
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="JavaScript SDK" icon="js" href="/javascript-sdk">
+    Full JavaScript/TypeScript SDK guide
+  </Card>
+  <Card title="Python SDK" icon="python" href="/python-sdk">
+    Full Python SDK guide
+  </Card>
+  <Card title="API Reference" icon="book" href="/api-reference/introduction">
+    Complete REST API documentation
+  </Card>
+  <Card title="Best Practices" icon="star" href="/best-practices">
+    Production deployment tips
+  </Card>
+</CardGroup>
+

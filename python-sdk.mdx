@@ -1,0 +1,1467 @@
+---
+title: "Python SDK"
+description: "Complete guide to the Trainly Python SDK"
+---
+
+## Installation
+
+Install the Trainly SDK using pip or poetry:
+
+<CodeGroup>
+
+```bash pip
+pip install trainly
+```
+
+```bash poetry
+poetry add trainly
+```
+
+```bash pipenv
+pipenv install trainly
+```
+
+</CodeGroup>
+
+## Quick Start
+
+```python
+from trainly import TrainlyClient
+
+# Initialize the client
+trainly = TrainlyClient(
+    api_key="tk_your_api_key",
+    chat_id="chat_abc123"
+)
+
+# Ask a question
+response = trainly.query(
+    question="What are the main findings?"
+)
+
+print("Answer:", response.answer)
+print("Citations:", len(response.context))
+```
+
+## Initialization
+
+### Basic Configuration
+
+```python
+from trainly import TrainlyClient
+import os
+
+trainly = TrainlyClient(
+    api_key=os.getenv("TRAINLY_API_KEY"),
+    chat_id=os.getenv("TRAINLY_CHAT_ID")
+)
+```
+
+### Advanced Configuration
+
+```python
+from trainly import TrainlyClient
+import logging
+
+trainly = TrainlyClient(
+    api_key="tk_your_api_key",
+    chat_id="chat_abc123",
+
+    # API Configuration
+    base_url="https://api.trainly.com",
+    timeout=30.0,  # Request timeout in seconds
+
+    # Retry Configuration
+    max_retries=3,
+    retry_delay=1.0,  # Initial delay in seconds
+    retry_backoff=2.0,  # Exponential backoff multiplier
+
+    # Default Query Options
+    default_model="gpt-4o-mini",
+    default_temperature=0.7,
+    default_max_tokens=1000,
+
+    # Logging
+    debug=False,
+    logger=logging.getLogger(__name__)
+)
+```
+
+## Querying Documents
+
+### Basic Query
+
+```python
+from trainly import TrainlyClient
+
+trainly = TrainlyClient(
+    api_key="tk_your_api_key",
+    chat_id="chat_abc123"
+)
+
+# Ask a question
+response = trainly.query(
+    question="What is the main conclusion?"
+)
+
+# Access response fields
+print("Answer:", response.answer)
+print("Model:", response.model)
+print("Tokens used:", response.usage.total_tokens)
+
+# Access citations
+for i, chunk in enumerate(response.context):
+    print(f"[{i}] {chunk.chunk_text[:100]}...")
+    print(f"    Relevance: {chunk.score * 100:.1f}%")
+```
+
+### Advanced Query Options
+
+```python
+response = trainly.query(
+    question="Explain the methodology in detail",
+
+    # Model Selection
+    model="gpt-4o",  # or 'claude-3-opus', 'gpt-4-turbo', etc.
+    temperature=0.3,  # Lower = focused, Higher = creative
+    max_tokens=2000,  # Maximum response length
+
+    # Custom Instructions
+    custom_prompt="You are a research analyst. Provide detailed technical explanations with citations.",
+
+    # Scope Filtering
+    scope_filters={
+        "project_id": "proj_123",
+        "version": "2.0",
+        "category": "research"
+    }
+)
+
+print(response.answer)
+```
+
+### Type Hints
+
+```python
+from trainly import TrainlyClient, QueryResponse, ChunkScore
+from typing import List, Dict, Any
+
+trainly = TrainlyClient(
+    api_key="tk_your_api_key",
+    chat_id="chat_abc123"
+)
+
+# Fully typed response
+response: QueryResponse = trainly.query(
+    question="What are the results?",
+    model="gpt-4o-mini",
+    temperature=0.7
+)
+
+# Access typed fields
+answer: str = response.answer
+context: List[ChunkScore] = response.context
+tokens: int = response.usage.total_tokens
+
+# Iterate with type hints
+chunk: ChunkScore
+for chunk in response.context:
+    chunk_id: str = chunk.chunk_id
+    text: str = chunk.chunk_text
+    score: float = chunk.score
+```
+
+## Streaming Responses
+
+### Basic Streaming
+
+```python
+# Stream responses in real-time
+for chunk in trainly.query_stream(
+    question="Summarize all the key points"
+):
+    if chunk.type == "content":
+        print(chunk.data, end="", flush=True)
+    elif chunk.type == "context":
+        print(f"\n\nUsing {len(chunk.data)} citations")
+    elif chunk.type == "end":
+        print("\n\nComplete!")
+```
+
+### Advanced Streaming with Progress
+
+```python
+from trainly import TrainlyClient
+from rich.console import Console
+from rich.progress import Progress, SpinnerColumn, TextColumn
+
+console = Console()
+trainly = TrainlyClient(
+    api_key="tk_your_api_key",
+    chat_id="chat_abc123"
+)
+
+def stream_query(question: str):
+    """Stream query with fancy progress display"""
+
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        console=console
+    ) as progress:
+        task = progress.add_task("Generating response...", total=None)
+
+        answer = ""
+
+        for chunk in trainly.query_stream(question=question):
+            if chunk.type == "content":
+                answer += chunk.data
+                console.print(chunk.data, end="")
+            elif chunk.type == "end":
+                progress.update(task, description="Complete!")
+                break
+
+        return answer
+
+# Usage
+answer = stream_query("What are the key findings?")
+console.print(f"\n\nFinal answer length: {len(answer)} characters")
+```
+
+### Async Streaming
+
+```python
+import asyncio
+from trainly import AsyncTrainlyClient
+
+async def stream_query_async():
+    trainly = AsyncTrainlyClient(
+        api_key="tk_your_api_key",
+        chat_id="chat_abc123"
+    )
+
+    async for chunk in trainly.query_stream(
+        question="Explain the results"
+    ):
+        if chunk.type == "content":
+            print(chunk.data, end="", flush=True)
+        elif chunk.type == "end":
+            print("\n\nDone!")
+
+# Run async function
+asyncio.run(stream_query_async())
+```
+
+## File Management
+
+### Upload Files
+
+```python
+# Upload from file path
+with open("research_paper.pdf", "rb") as file:
+    result = trainly.upload_file(
+        file=file,
+        filename="research_paper.pdf",
+        scope_values={
+            "project_id": "proj_123",
+            "category": "research",
+            "version": 1.0
+        }
+    )
+
+print(f"Uploaded: {result.filename}")
+print(f"File ID: {result.file_id}")
+print(f"Size: {result.size_bytes} bytes")
+
+# Upload from bytes
+file_bytes = b"This is my document content..."
+result = trainly.upload_file(
+    file=file_bytes,
+    filename="notes.txt",
+    scope_values={"type": "notes"}
+)
+```
+
+### Upload Text Content
+
+```python
+# Upload raw text without a file
+result = trainly.upload_text(
+    content="This is my document content. It contains important information...",
+    name="My Notes.txt",
+    scope_values={
+        "type": "notes",
+        "date": "2024-01-15"
+    }
+)
+
+print(f"Text uploaded as: {result.filename}")
+```
+
+### Bulk Upload
+
+```python
+from pathlib import Path
+from typing import List
+
+# Find all PDF files
+pdf_files = list(Path("./documents").rglob("*.pdf"))
+
+results = trainly.upload_bulk(
+    files=[
+        {
+            "file": open(path, "rb"),
+            "filename": path.name,
+            "scope_values": {
+                "source": "research",
+                "upload_date": "2024-01-15"
+            }
+        }
+        for path in pdf_files
+    ],
+    on_progress=lambda completed, total: print(f"Progress: {completed}/{total}")
+)
+
+print(f"Success: {results.successful_uploads}/{results.total_files}")
+
+# Check for failures
+for result in results.results:
+    if not result.success:
+        print(f"Failed: {result.filename} - {result.error}")
+```
+
+### Bulk Upload with Progress Bar
+
+```python
+from trainly import TrainlyClient
+from tqdm import tqdm
+from pathlib import Path
+
+trainly = TrainlyClient(
+    api_key="tk_your_api_key",
+    chat_id="chat_abc123"
+)
+
+# Get all PDF files
+pdf_files = list(Path("./documents").rglob("*.pdf"))
+
+# Upload with progress bar
+results = []
+with tqdm(total=len(pdf_files), desc="Uploading files") as pbar:
+    for pdf_path in pdf_files:
+        try:
+            with open(pdf_path, "rb") as file:
+                result = trainly.upload_file(
+                    file=file,
+                    filename=pdf_path.name,
+                    scope_values={"source": "batch_upload"}
+                )
+                results.append({"file": pdf_path.name, "success": True})
+        except Exception as e:
+            results.append({"file": pdf_path.name, "success": False, "error": str(e)})
+        finally:
+            pbar.update(1)
+
+# Summary
+successful = sum(1 for r in results if r["success"])
+print(f"\nUploaded {successful}/{len(results)} files successfully")
+```
+
+### List Files
+
+```python
+# Get all files in chat
+files = trainly.list_files()
+
+print(f"Total files: {files.total_files}")
+print(f"Total size: {format_bytes(files.total_size_bytes)}")
+
+for file in files.files:
+    print(f"""
+    File: {file.filename}
+    ID: {file.file_id}
+    Size: {format_bytes(file.size_bytes)}
+    Chunks: {file.chunk_count}
+    Uploaded: {file.upload_date}
+    """)
+
+# Helper function
+def format_bytes(bytes: int) -> str:
+    if bytes == 0:
+        return "0 B"
+
+    sizes = ["B", "KB", "MB", "GB", "TB"]
+    i = 0
+    while bytes >= 1024 and i < len(sizes) - 1:
+        bytes /= 1024
+        i += 1
+
+    return f"{bytes:.1f} {sizes[i]}"
+```
+
+### Delete Files
+
+```python
+# Delete a specific file
+result = trainly.delete_file("v1_user_xyz_doc_123")
+
+print(f"Deleted: {result.filename}")
+print(f"Freed: {format_bytes(result.size_bytes_freed)}")
+print(f"Chunks removed: {result.chunks_deleted}")
+
+# Delete multiple files
+file_ids = ["file_1", "file_2", "file_3"]
+
+for file_id in file_ids:
+    try:
+        result = trainly.delete_file(file_id)
+        print(f"✓ Deleted {result.filename}")
+    except Exception as e:
+        print(f"✗ Failed to delete {file_id}: {e}")
+
+    # Rate limiting delay
+    import time
+    time.sleep(0.1)
+```
+
+## V1 OAuth Authentication
+
+### Setup V1 Client
+
+```python
+from trainly import TrainlyV1Client
+
+# User authenticates with your OAuth provider (Clerk, Auth0, etc.)
+user_oauth_token = get_oauth_token()  # Your implementation
+
+# Initialize V1 client
+trainly = TrainlyV1Client(
+    user_token=user_oauth_token,
+    app_id="app_your_app_id"
+)
+
+# Query user's private data
+response = trainly.query(
+    messages=[
+        {"role": "user", "content": "What documents do I have?"}
+    ],
+    response_tokens=200
+)
+
+print("Answer:", response.answer)
+print("Privacy guarantee:", response.privacy_guarantee)
+```
+
+### V1 File Operations
+
+```python
+# Upload file to user's private subchat
+with open("user_document.pdf", "rb") as file:
+    upload_result = trainly.upload_file(
+        file=file,
+        scope_values={
+            "playlist_id": "playlist_123",
+            "genre": "rock"
+        }
+    )
+
+print("Uploaded to user subchat:", upload_result.chat_id)
+
+# List user's files
+files = trainly.list_files()
+for file in files.files:
+    print(f"{file.filename} - {format_bytes(file.size_bytes)}")
+
+# Delete user's file
+result = trainly.delete_file(file_id)
+print(f"Deleted: {result.filename}")
+```
+
+## Error Handling
+
+### Basic Error Handling
+
+```python
+from trainly import (
+    TrainlyClient,
+    TrainlyError,
+    RateLimitError,
+    AuthenticationError,
+    ValidationError
+)
+
+trainly = TrainlyClient(
+    api_key="tk_your_api_key",
+    chat_id="chat_abc123"
+)
+
+try:
+    response = trainly.query(
+        question="What is the conclusion?"
+    )
+    print(response.answer)
+
+except RateLimitError as e:
+    print(f"Rate limit exceeded. Retry after: {e.retry_after} seconds")
+    # Wait and retry
+    import time
+    time.sleep(e.retry_after)
+
+except AuthenticationError as e:
+    print(f"Authentication failed: {e}")
+    # Refresh API key or re-login
+
+except ValidationError as e:
+    print(f"Invalid request: {e}")
+    print(f"Details: {e.details}")
+
+except TrainlyError as e:
+    print(f"Trainly API error: {e}")
+    print(f"Status code: {e.status}")
+
+except Exception as e:
+    print(f"Unexpected error: {e}")
+```
+
+### Retry Decorator
+
+```python
+import time
+from functools import wraps
+from trainly import RateLimitError, TrainlyError
+
+def retry_on_rate_limit(max_attempts=3):
+    """Decorator to automatically retry on rate limits"""
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            for attempt in range(max_attempts):
+                try:
+                    return func(*args, **kwargs)
+
+                except RateLimitError as e:
+                    if attempt < max_attempts - 1:
+                        wait_time = e.retry_after or (2 ** attempt)
+                        print(f"Rate limited. Waiting {wait_time}s...")
+                        time.sleep(wait_time)
+                    else:
+                        raise
+
+                except TrainlyError as e:
+                    if attempt < max_attempts - 1 and e.status >= 500:
+                        wait_time = 2 ** attempt
+                        print(f"Server error. Retrying in {wait_time}s...")
+                        time.sleep(wait_time)
+                    else:
+                        raise
+
+        return wrapper
+    return decorator
+
+# Usage
+@retry_on_rate_limit(max_attempts=3)
+def query_with_retry(question: str):
+    return trainly.query(question=question)
+
+response = query_with_retry("What are the findings?")
+```
+
+### Context Manager
+
+```python
+from trainly import TrainlyClient
+
+# Use context manager for automatic cleanup
+with TrainlyClient(
+    api_key="tk_your_api_key",
+    chat_id="chat_abc123"
+) as trainly:
+    response = trainly.query(
+        question="What is the result?"
+    )
+    print(response.answer)
+
+# Connection automatically closed
+```
+
+## Advanced Features
+
+### Async Support
+
+```python
+import asyncio
+from trainly import AsyncTrainlyClient
+
+async def main():
+    trainly = AsyncTrainlyClient(
+        api_key="tk_your_api_key",
+        chat_id="chat_abc123"
+    )
+
+    # Async query
+    response = await trainly.query(
+        question="What are the findings?"
+    )
+
+    print(response.answer)
+
+    # Async streaming
+    async for chunk in trainly.query_stream(
+        question="Summarize the results"
+    ):
+        if chunk.type == "content":
+            print(chunk.data, end="", flush=True)
+        elif chunk.type == "end":
+            print("\n\nComplete!")
+
+asyncio.run(main())
+```
+
+### Concurrent Queries
+
+```python
+import asyncio
+from trainly import AsyncTrainlyClient
+
+async def batch_queries():
+    trainly = AsyncTrainlyClient(
+        api_key="tk_your_api_key",
+        chat_id="chat_abc123"
+    )
+
+    questions = [
+        "What is the introduction about?",
+        "What is the methodology?",
+        "What are the conclusions?",
+        "What are the limitations?"
+    ]
+
+    # Run queries concurrently
+    tasks = [
+        trainly.query(question=q)
+        for q in questions
+    ]
+
+    responses = await asyncio.gather(*tasks)
+
+    for question, response in zip(questions, responses):
+        print(f"\nQ: {question}")
+        print(f"A: {response.answer[:200]}...")
+
+asyncio.run(batch_queries())
+```
+
+### Rate Limiting
+
+```python
+from trainly import RateLimiter
+import time
+
+# Create rate limiter (60 requests per minute)
+limiter = RateLimiter(
+    max_requests=60,
+    window_seconds=60
+)
+
+def rate_limited_query(question: str):
+    # Wait if necessary
+    limiter.wait_for_slot()
+
+    # Make request
+    return trainly.query(question=question)
+
+# Use it
+response = rate_limited_query("What is the conclusion?")
+```
+
+### Caching
+
+```python
+from functools import lru_cache
+from trainly import TrainlyClient
+import hashlib
+
+trainly = TrainlyClient(
+    api_key="tk_your_api_key",
+    chat_id="chat_abc123"
+)
+
+@lru_cache(maxsize=100)
+def cached_query(question: str, model: str = "gpt-4o-mini"):
+    """Cache query results"""
+    response = trainly.query(
+        question=question,
+        model=model
+    )
+    return response
+
+# First call - hits API
+response1 = cached_query("What is the conclusion?")
+
+# Second call - returns cached result
+response2 = cached_query("What is the conclusion?")
+
+# Different question - hits API
+response3 = cached_query("What is the methodology?")
+```
+
+### Advanced Caching with TTL
+
+```python
+from datetime import datetime, timedelta
+from typing import Dict, Tuple, Any
+
+class QueryCache:
+    def __init__(self, ttl_seconds: int = 300):
+        self.cache: Dict[str, Tuple[Any, datetime]] = {}
+        self.ttl = timedelta(seconds=ttl_seconds)
+
+    def get(self, question: str):
+        if question in self.cache:
+            value, timestamp = self.cache[question]
+            if datetime.now() - timestamp < self.ttl:
+                return value
+            else:
+                del self.cache[question]
+        return None
+
+    def set(self, question: str, value: Any):
+        self.cache[question] = (value, datetime.now())
+
+    def clear(self):
+        self.cache.clear()
+
+# Usage
+cache = QueryCache(ttl_seconds=300)  # 5 minute TTL
+
+def cached_query(question: str):
+    # Check cache
+    cached = cache.get(question)
+    if cached:
+        print("Cache hit!")
+        return cached
+
+    # Query API
+    response = trainly.query(question=question)
+
+    # Store in cache
+    cache.set(question, response)
+
+    return response
+```
+
+## Framework Integration
+
+### Django
+
+```python
+# settings.py
+TRAINLY_API_KEY = os.getenv("TRAINLY_API_KEY")
+TRAINLY_CHAT_ID = os.getenv("TRAINLY_CHAT_ID")
+
+# views.py
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+from trainly import TrainlyClient
+from django.conf import settings
+import json
+
+trainly = TrainlyClient(
+    api_key=settings.TRAINLY_API_KEY,
+    chat_id=settings.TRAINLY_CHAT_ID
+)
+
+@require_http_methods(["POST"])
+def query_view(request):
+    try:
+        data = json.loads(request.body)
+        question = data.get("question")
+
+        if not question:
+            return JsonResponse(
+                {"error": "Question is required"},
+                status=400
+            )
+
+        response = trainly.query(question=question)
+
+        return JsonResponse({
+            "answer": response.answer,
+            "context": [
+                {
+                    "chunk_id": c.chunk_id,
+                    "text": c.chunk_text,
+                    "score": c.score
+                }
+                for c in response.context
+            ]
+        })
+
+    except Exception as e:
+        return JsonResponse(
+            {"error": str(e)},
+            status=500
+        )
+```
+
+### Flask
+
+```python
+from flask import Flask, request, jsonify
+from trainly import TrainlyClient, TrainlyError
+import os
+
+app = Flask(__name__)
+
+trainly = TrainlyClient(
+    api_key=os.getenv("TRAINLY_API_KEY"),
+    chat_id=os.getenv("TRAINLY_CHAT_ID")
+)
+
+@app.route("/api/query", methods=["POST"])
+def query():
+    try:
+        data = request.get_json()
+        question = data.get("question")
+
+        if not question:
+            return jsonify({"error": "Question is required"}), 400
+
+        response = trainly.query(question=question)
+
+        return jsonify({
+            "answer": response.answer,
+            "context": [
+                {
+                    "chunk_id": c.chunk_id,
+                    "text": c.chunk_text,
+                    "score": c.score
+                }
+                for c in response.context
+            ],
+            "usage": {
+                "total_tokens": response.usage.total_tokens
+            }
+        })
+
+    except TrainlyError as e:
+        return jsonify({"error": str(e)}), e.status or 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/upload", methods=["POST"])
+def upload():
+    try:
+        if "file" not in request.files:
+            return jsonify({"error": "No file provided"}), 400
+
+        file = request.files["file"]
+
+        result = trainly.upload_file(
+            file=file.read(),
+            filename=file.filename
+        )
+
+        return jsonify({
+            "success": True,
+            "file_id": result.file_id,
+            "filename": result.filename,
+            "size_bytes": result.size_bytes
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+if __name__ == "__main__":
+    app.run(debug=True)
+```
+
+### FastAPI
+
+```python
+from fastapi import FastAPI, HTTPException, UploadFile, File
+from trainly import TrainlyClient, TrainlyError
+from pydantic import BaseModel
+import os
+
+app = FastAPI()
+
+trainly = TrainlyClient(
+    api_key=os.getenv("TRAINLY_API_KEY"),
+    chat_id=os.getenv("TRAINLY_CHAT_ID")
+)
+
+class QueryRequest(BaseModel):
+    question: str
+    model: str = "gpt-4o-mini"
+    temperature: float = 0.7
+
+class QueryResponse(BaseModel):
+    answer: str
+    context: list
+    usage: dict
+
+@app.post("/api/query", response_model=QueryResponse)
+async def query_endpoint(request: QueryRequest):
+    try:
+        response = trainly.query(
+            question=request.question,
+            model=request.model,
+            temperature=request.temperature
+        )
+
+        return QueryResponse(
+            answer=response.answer,
+            context=[
+                {
+                    "chunk_id": c.chunk_id,
+                    "text": c.chunk_text,
+                    "score": c.score
+                }
+                for c in response.context
+            ],
+            usage={
+                "total_tokens": response.usage.total_tokens
+            }
+        )
+
+    except TrainlyError as e:
+        raise HTTPException(status_code=e.status or 500, detail=str(e))
+
+@app.post("/api/upload")
+async def upload_endpoint(file: UploadFile = File(...)):
+    try:
+        result = trainly.upload_file(
+            file=await file.read(),
+            filename=file.filename
+        )
+
+        return {
+            "success": True,
+            "file_id": result.file_id,
+            "filename": result.filename,
+            "size_bytes": result.size_bytes
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+```
+
+## Logging & Debugging
+
+### Enable Debug Mode
+
+```python
+import logging
+from trainly import TrainlyClient
+
+# Configure logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+# Enable debug mode
+trainly = TrainlyClient(
+    api_key="tk_your_api_key",
+    chat_id="chat_abc123",
+    debug=True
+)
+
+# All API calls will be logged
+response = trainly.query(question="What is the result?")
+```
+
+### Custom Logger
+
+```python
+import logging
+from trainly import TrainlyClient
+
+# Create custom logger
+logger = logging.getLogger("trainly_app")
+logger.setLevel(logging.INFO)
+
+# Add file handler
+file_handler = logging.FileHandler("trainly.log")
+file_handler.setFormatter(
+    logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+)
+logger.addHandler(file_handler)
+
+# Use custom logger
+trainly = TrainlyClient(
+    api_key="tk_your_api_key",
+    chat_id="chat_abc123",
+    logger=logger
+)
+```
+
+### Request/Response Logging
+
+```python
+from trainly import TrainlyClient
+import json
+
+class LoggingTrainlyClient(TrainlyClient):
+    def query(self, **kwargs):
+        # Log request
+        print("=" * 50)
+        print("REQUEST:")
+        print(json.dumps(kwargs, indent=2))
+
+        # Make request
+        response = super().query(**kwargs)
+
+        # Log response
+        print("\nRESPONSE:")
+        print(f"Answer length: {len(response.answer)} chars")
+        print(f"Citations: {len(response.context)}")
+        print(f"Tokens: {response.usage.total_tokens}")
+        print("=" * 50)
+
+        return response
+
+trainly = LoggingTrainlyClient(
+    api_key="tk_your_api_key",
+    chat_id="chat_abc123"
+)
+```
+
+## Data Classes & Type Hints
+
+### Full Type Definitions
+
+```python
+from trainly import (
+    TrainlyClient,
+    QueryResponse,
+    ChunkScore,
+    UploadResponse,
+    FileInfo,
+    ListFilesResponse,
+    DeleteResponse,
+    Usage
+)
+from typing import List, Dict, Optional
+
+# Client
+client: TrainlyClient = TrainlyClient(
+    api_key="tk_key",
+    chat_id="chat_id"
+)
+
+# Query Response
+response: QueryResponse = client.query(question="What is AI?")
+answer: str = response.answer
+context: List[ChunkScore] = response.context
+chat_id: str = response.chat_id
+model: str = response.model
+usage: Usage = response.usage
+
+# Chunk Score
+chunk: ChunkScore = response.context[0]
+chunk_id: str = chunk.chunk_id
+chunk_text: str = chunk.chunk_text
+score: float = chunk.score
+
+# Upload Response
+upload_result: UploadResponse = client.upload_file(file=file_bytes)
+success: bool = upload_result.success
+filename: str = upload_result.filename
+file_id: str = upload_result.file_id
+
+# List Files Response
+files_response: ListFilesResponse = client.list_files()
+files: List[FileInfo] = files_response.files
+total_files: int = files_response.total_files
+total_size: int = files_response.total_size_bytes
+
+# File Info
+file_info: FileInfo = files_response.files[0]
+file_id: str = file_info.file_id
+filename: str = file_info.filename
+upload_date: str = file_info.upload_date
+size_bytes: int = file_info.size_bytes
+chunk_count: int = file_info.chunk_count
+
+# Delete Response
+delete_result: DeleteResponse = client.delete_file(file_id)
+message: str = delete_result.message
+chunks_deleted: int = delete_result.chunks_deleted
+size_freed: int = delete_result.size_bytes_freed
+```
+
+## Real-World Examples
+
+### Document Q&A CLI
+
+```python
+#!/usr/bin/env python3
+from trainly import TrainlyClient
+from rich.console import Console
+from rich.markdown import Markdown
+from rich.prompt import Prompt
+import os
+
+console = Console()
+trainly = TrainlyClient(
+    api_key=os.getenv("TRAINLY_API_KEY"),
+    chat_id=os.getenv("TRAINLY_CHAT_ID")
+)
+
+def main():
+    console.print("[bold cyan]Trainly Document Q&A[/bold cyan]")
+    console.print("Type 'exit' to quit\n")
+
+    while True:
+        question = Prompt.ask("\n[yellow]Your question[/yellow]")
+
+        if question.lower() in ["exit", "quit"]:
+            break
+
+        try:
+            console.print("[dim]Searching documents...[/dim]")
+
+            response = trainly.query(question=question)
+
+            # Display answer as markdown
+            console.print("\n[bold green]Answer:[/bold green]")
+            md = Markdown(response.answer)
+            console.print(md)
+
+            # Display citations
+            if response.context:
+                console.print(f"\n[dim]Based on {len(response.context)} sources[/dim]")
+
+        except Exception as e:
+            console.print(f"[bold red]Error:[/bold red] {e}")
+
+if __name__ == "__main__":
+    main()
+```
+
+### Batch Processing Script
+
+```python
+from trainly import TrainlyClient
+from pathlib import Path
+import csv
+import sys
+
+trainly = TrainlyClient(
+    api_key=os.getenv("TRAINLY_API_KEY"),
+    chat_id=os.getenv("TRAINLY_CHAT_ID")
+)
+
+def batch_process_questions(questions_file: str, output_file: str):
+    """Process a CSV of questions and save answers"""
+
+    # Read questions
+    with open(questions_file, 'r') as f:
+        reader = csv.DictReader(f)
+        questions = list(reader)
+
+    # Process each question
+    results = []
+    for i, row in enumerate(questions, 1):
+        print(f"Processing {i}/{len(questions)}: {row['question'][:50]}...")
+
+        try:
+            response = trainly.query(
+                question=row['question'],
+                model=row.get('model', 'gpt-4o-mini')
+            )
+
+            results.append({
+                "question": row['question'],
+                "answer": response.answer,
+                "tokens": response.usage.total_tokens,
+                "citations": len(response.context),
+                "status": "success"
+            })
+
+        except Exception as e:
+            results.append({
+                "question": row['question'],
+                "answer": "",
+                "tokens": 0,
+                "citations": 0,
+                "status": f"error: {e}"
+            })
+
+    # Save results
+    with open(output_file, 'w', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=[
+            'question', 'answer', 'tokens', 'citations', 'status'
+        ])
+        writer.writeheader()
+        writer.writerows(results)
+
+    print(f"\nResults saved to {output_file}")
+
+if __name__ == "__main__":
+    if len(sys.argv) != 3:
+        print("Usage: python batch_process.py questions.csv output.csv")
+        sys.exit(1)
+
+    batch_process_questions(sys.argv[1], sys.argv[2])
+```
+
+### Jupyter Notebook Integration
+
+```python
+# In Jupyter Notebook
+from trainly import TrainlyClient
+import pandas as pd
+from IPython.display import display, Markdown
+
+trainly = TrainlyClient(
+    api_key="tk_your_api_key",
+    chat_id="chat_abc123"
+)
+
+# Query and display as markdown
+def ask(question: str):
+    response = trainly.query(question=question)
+
+    # Display answer
+    display(Markdown(f"### Answer\n{response.answer}"))
+
+    # Display citations as dataframe
+    if response.context:
+        citations_df = pd.DataFrame([
+            {
+                "Citation": i,
+                "Text": c.chunk_text[:100] + "...",
+                "Relevance": f"{c.score * 100:.1f}%"
+            }
+            for i, c in enumerate(response.context[:5])
+        ])
+        display(citations_df)
+
+    return response
+
+# Usage
+response = ask("What are the main findings?")
+```
+
+## Testing
+
+### Unit Tests
+
+```python
+import unittest
+from unittest.mock import Mock, patch
+from trainly import TrainlyClient, QueryResponse
+
+class TestTrainlyIntegration(unittest.TestCase):
+    def setUp(self):
+        self.trainly = TrainlyClient(
+            api_key="tk_test_key",
+            chat_id="chat_test_123"
+        )
+
+    @patch('trainly.client.requests.post')
+    def test_query(self, mock_post):
+        # Mock response
+        mock_post.return_value.json.return_value = {
+            "answer": "Test answer",
+            "context": [],
+            "chat_id": "chat_test_123",
+            "model": "gpt-4o-mini",
+            "usage": {
+                "prompt_tokens": 10,
+                "completion_tokens": 20,
+                "total_tokens": 30
+            }
+        }
+        mock_post.return_value.status_code = 200
+
+        # Test query
+        response = self.trainly.query(question="Test question")
+
+        self.assertEqual(response.answer, "Test answer")
+        self.assertEqual(response.model, "gpt-4o-mini")
+
+    def test_query_validation(self):
+        # Test empty question
+        with self.assertRaises(ValueError):
+            self.trainly.query(question="")
+
+if __name__ == "__main__":
+    unittest.main()
+```
+
+### Integration Tests
+
+```python
+import pytest
+from trainly import TrainlyClient
+import os
+
+@pytest.fixture
+def trainly_client():
+    return TrainlyClient(
+        api_key=os.getenv("TRAINLY_TEST_API_KEY"),
+        chat_id=os.getenv("TRAINLY_TEST_CHAT_ID")
+    )
+
+def test_query_basic(trainly_client):
+    response = trainly_client.query(
+        question="What is 2+2?"
+    )
+
+    assert response.answer
+    assert response.chat_id
+    assert response.usage.total_tokens > 0
+
+def test_query_with_scopes(trainly_client):
+    response = trainly_client.query(
+        question="Test question",
+        scope_filters={"project_id": "test_proj"}
+    )
+
+    assert response.answer
+
+@pytest.mark.asyncio
+async def test_async_query():
+    from trainly import AsyncTrainlyClient
+
+    trainly = AsyncTrainlyClient(
+        api_key=os.getenv("TRAINLY_TEST_API_KEY"),
+        chat_id=os.getenv("TRAINLY_TEST_CHAT_ID")
+    )
+
+    response = await trainly.query(question="Test")
+
+    assert response.answer
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Environment Variables">
+    Always use environment variables for credentials:
+
+    ```python
+    # .env file
+    TRAINLY_API_KEY=tk_your_api_key
+    TRAINLY_CHAT_ID=chat_abc123
+
+    # Load with python-dotenv
+    from dotenv import load_dotenv
+    import os
+
+    load_dotenv()
+
+    trainly = TrainlyClient(
+        api_key=os.getenv("TRAINLY_API_KEY"),
+        chat_id=os.getenv("TRAINLY_CHAT_ID")
+    )
+    ```
+  </Accordion>
+
+  <Accordion title="Connection Pooling">
+    Reuse client instances for better performance:
+
+    ```python
+    # ✅ GOOD - Reuse client
+    trainly = TrainlyClient(api_key="...", chat_id="...")
+
+    for question in questions:
+        response = trainly.query(question=question)
+
+    # ❌ BAD - Create new client each time
+    for question in questions:
+        trainly = TrainlyClient(api_key="...", chat_id="...")
+        response = trainly.query(question=question)
+    ```
+  </Accordion>
+
+  <Accordion title="Async for Performance">
+    Use async client for concurrent operations:
+
+    ```python
+    import asyncio
+    from trainly import AsyncTrainlyClient
+
+    async def process_many_queries(questions):
+        trainly = AsyncTrainlyClient(...)
+
+        # Run concurrently
+        tasks = [
+            trainly.query(question=q)
+            for q in questions
+        ]
+
+        return await asyncio.gather(*tasks)
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Import Errors">
+    ```bash
+    ModuleNotFoundError: No module named 'trainly'
+    ```
+
+    **Solution**: Install the SDK
+    ```bash
+    pip install trainly
+    ```
+  </Accordion>
+
+  <Accordion title="Authentication Errors">
+    ```
+    AuthenticationError: Invalid API key
+    ```
+
+    **Solutions**:
+    - Check API key starts with `tk_`
+    - Verify API access is enabled in chat settings
+    - Ensure chat has published settings
+  </Accordion>
+
+  <Accordion title="Empty Responses">
+    ```python
+    response.answer == "I don't have any context..."
+    ```
+
+    **Solutions**:
+    - Upload documents to the chat
+    - Check published settings include context files
+    - Verify scope filters aren't too restrictive
+  </Accordion>
+
+  <Accordion title="Rate Limit Errors">
+    ```
+    RateLimitError: Rate limit exceeded
+    ```
+
+    **Solutions**:
+    - Implement exponential backoff
+    - Use caching for common queries
+    - Consider upgrading your plan
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="JavaScript SDK" icon="js" href="/javascript-sdk">
+    JavaScript/TypeScript SDK documentation
+  </Card>
+  <Card title="API Reference" icon="book" href="/api-reference/introduction">
+    Complete REST API documentation
+  </Card>
+  <Card title="Examples" icon="code" href="/examples">
+    More integration examples
+  </Card>
+  <Card title="Support" icon="question" href="/support">
+    Get help from our team
+  </Card>
+</CardGroup>
+

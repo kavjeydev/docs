@@ -1,0 +1,548 @@
+---
+title: "SDK Quick Start"
+description: "Get started with Trainly SDKs in minutes"
+---
+
+## Overview
+
+Trainly provides official SDKs for JavaScript/TypeScript and Python, making it easy to integrate GraphRAG capabilities into your applications. This guide will get you up and running in 5 minutes.
+
+<CardGroup cols={2}>
+  <Card title="JavaScript/TypeScript" icon="js" href="#javascript-setup">
+    For Node.js and browser applications
+  </Card>
+  <Card title="Python" icon="python" href="#python-setup">
+    For Python applications and scripts
+  </Card>
+</CardGroup>
+
+## Prerequisites
+
+Before you begin, make sure you have:
+
+<Steps>
+  <Step title="Trainly Account">
+    Sign up at [trainly.com](https://trainly.com) if you haven't already
+  </Step>
+  <Step title="Create a Chat">
+    Create a new chat and upload some documents
+  </Step>
+  <Step title="Enable API Access">
+    Go to chat settings → Enable API access → Generate API key
+  </Step>
+  <Step title="Install SDK">
+    Choose your preferred SDK and follow the installation steps below
+  </Step>
+</Steps>
+
+## JavaScript Setup
+
+### Installation
+
+<CodeGroup>
+
+```bash npm
+npm install @trainly/sdk
+```
+
+```bash yarn
+yarn add @trainly/sdk
+```
+
+```bash pnpm
+pnpm add @trainly/sdk
+```
+
+</CodeGroup>
+
+<Note>
+  The JavaScript SDK works in both Node.js and browser environments with automatic environment detection.
+</Note>
+
+### Basic Usage
+
+```javascript
+import { TrainlyClient } from '@trainly/sdk';
+
+// Initialize the client
+const trainly = new TrainlyClient({
+  apiKey: 'tk_your_api_key_here',
+  chatId: 'chat_abc123'
+});
+
+// Ask a question
+async function queryKnowledgeBase() {
+  const response = await trainly.query({
+    question: 'What are the main findings?'
+  });
+
+  console.log('Answer:', response.answer);
+  console.log('Citations:', response.context);
+}
+
+queryKnowledgeBase();
+```
+
+### TypeScript Support
+
+The SDK is written in TypeScript with full type definitions:
+
+```typescript
+import { TrainlyClient, QueryResponse, UploadResponse } from '@trainly/sdk';
+
+const trainly = new TrainlyClient({
+  apiKey: process.env.TRAINLY_API_KEY!,
+  chatId: process.env.TRAINLY_CHAT_ID!
+});
+
+// Fully typed response
+const response: QueryResponse = await trainly.query({
+  question: 'What is the methodology?',
+  model: 'gpt-4o-mini',
+  temperature: 0.7
+});
+
+// TypeScript knows all available fields
+console.log(response.answer);
+console.log(response.context[0].score);
+console.log(response.usage.total_tokens);
+```
+
+## Python Setup
+
+### Installation
+
+<CodeGroup>
+
+```bash pip
+pip install trainly
+```
+
+```bash poetry
+poetry add trainly
+```
+
+</CodeGroup>
+
+### Basic Usage
+
+```python
+from trainly import TrainlyClient
+
+# Initialize the client
+trainly = TrainlyClient(
+    api_key="tk_your_api_key_here",
+    chat_id="chat_abc123"
+)
+
+# Ask a question
+response = trainly.query(
+    question="What are the main findings?"
+)
+
+print("Answer:", response.answer)
+print("Citations:", len(response.context))
+
+# Access context details
+for i, chunk in enumerate(response.context):
+    print(f"Citation [{i}]: {chunk.chunk_text[:100]}... (score: {chunk.score})")
+```
+
+### Type Hints
+
+The Python SDK includes full type hints for better IDE support:
+
+```python
+from trainly import TrainlyClient, QueryResponse, ChunkScore
+from typing import List
+
+trainly = TrainlyClient(
+    api_key="tk_your_api_key",
+    chat_id="chat_abc123"
+)
+
+# Fully typed response
+response: QueryResponse = trainly.query(
+    question="What is the conclusion?",
+    model="gpt-4o",
+    temperature=0.5,
+    max_tokens=2000
+)
+
+# Access typed fields
+answer: str = response.answer
+context: List[ChunkScore] = response.context
+tokens: int = response.usage.total_tokens
+```
+
+## Environment Variables
+
+For better security, use environment variables for your credentials:
+
+<CodeGroup>
+
+```bash .env
+TRAINLY_API_KEY=tk_your_api_key_here
+TRAINLY_CHAT_ID=chat_abc123
+```
+
+```javascript JavaScript
+import { TrainlyClient } from '@trainly/sdk';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const trainly = new TrainlyClient({
+  apiKey: process.env.TRAINLY_API_KEY,
+  chatId: process.env.TRAINLY_CHAT_ID
+});
+```
+
+```python Python
+import os
+from trainly import TrainlyClient
+
+trainly = TrainlyClient(
+    api_key=os.getenv("TRAINLY_API_KEY"),
+    chat_id=os.getenv("TRAINLY_CHAT_ID")
+)
+```
+
+</CodeGroup>
+
+## Quick Examples
+
+### File Upload
+
+<CodeGroup>
+
+```javascript JavaScript
+// Upload a file
+const uploadResult = await trainly.uploadFile({
+  file: './research_paper.pdf',
+  scopeValues: {
+    project_id: 'proj_123',
+    category: 'research'
+  }
+});
+
+console.log('Uploaded:', uploadResult.filename);
+console.log('File ID:', uploadResult.file_id);
+```
+
+```python Python
+# Upload a file
+with open('research_paper.pdf', 'rb') as file:
+    upload_result = trainly.upload_file(
+        file=file,
+        scope_values={
+            'project_id': 'proj_123',
+            'category': 'research'
+        }
+    )
+
+print(f"Uploaded: {upload_result.filename}")
+print(f"File ID: {upload_result.file_id}")
+```
+
+</CodeGroup>
+
+### Streaming Responses
+
+<CodeGroup>
+
+```javascript JavaScript
+// Stream responses in real-time
+for await (const chunk of trainly.queryStream({
+  question: 'Explain the methodology in detail'
+})) {
+  if (chunk.type === 'content') {
+    process.stdout.write(chunk.data);
+  } else if (chunk.type === 'end') {
+    console.log('\n\nStream complete!');
+  }
+}
+```
+
+```python Python
+# Stream responses in real-time
+for chunk in trainly.query_stream(
+    question="Explain the methodology in detail"
+):
+    if chunk.type == 'content':
+        print(chunk.data, end='', flush=True)
+    elif chunk.type == 'end':
+        print('\n\nStream complete!')
+```
+
+</CodeGroup>
+
+### List Files
+
+<CodeGroup>
+
+```javascript JavaScript
+// Get all files in chat
+const files = await trainly.listFiles();
+
+console.log(`Total files: ${files.total_files}`);
+console.log(`Total size: ${formatBytes(files.total_size_bytes)}`);
+
+files.files.forEach(file => {
+  console.log(`- ${file.filename} (${file.chunk_count} chunks)`);
+});
+```
+
+```python Python
+# Get all files in chat
+files = trainly.list_files()
+
+print(f"Total files: {files.total_files}")
+print(f"Total size: {format_bytes(files.total_size_bytes)}")
+
+for file in files.files:
+    print(f"- {file.filename} ({file.chunk_count} chunks)")
+```
+
+</CodeGroup>
+
+### Delete Files
+
+<CodeGroup>
+
+```javascript JavaScript
+// Delete a specific file
+const deleteResult = await trainly.deleteFile(
+  'v1_user_xyz_document.pdf_1609459200'
+);
+
+console.log(`Deleted ${deleteResult.filename}`);
+console.log(`Freed ${formatBytes(deleteResult.size_bytes_freed)}`);
+```
+
+```python Python
+# Delete a specific file
+delete_result = trainly.delete_file(
+    'v1_user_xyz_document.pdf_1609459200'
+)
+
+print(f"Deleted {delete_result.filename}")
+print(f"Freed {format_bytes(delete_result.size_bytes_freed)}")
+```
+
+</CodeGroup>
+
+## V1 OAuth Authentication
+
+For user-facing applications with OAuth:
+
+<CodeGroup>
+
+```javascript JavaScript
+import { TrainlyV1Client } from '@trainly/sdk';
+
+// User authenticates with their OAuth provider
+const userToken = await getUserOAuthToken(); // Your OAuth implementation
+
+// Initialize V1 client with user's token
+const trainly = new TrainlyV1Client({
+  userToken: userToken,
+  appId: 'app_your_app_id'
+});
+
+// Query user's private data
+const response = await trainly.query({
+  messages: [
+    { role: 'user', content: 'What is in my documents?' }
+  ]
+});
+
+console.log(response.answer);
+```
+
+```python Python
+from trainly import TrainlyV1Client
+
+# User authenticates with their OAuth provider
+user_token = get_user_oauth_token()  # Your OAuth implementation
+
+# Initialize V1 client with user's token
+trainly = TrainlyV1Client(
+    user_token=user_token,
+    app_id="app_your_app_id"
+)
+
+# Query user's private data
+response = trainly.query(
+    messages=[
+        {"role": "user", "content": "What is in my documents?"}
+    ]
+)
+
+print(response.answer)
+```
+
+</CodeGroup>
+
+## Error Handling
+
+Always wrap API calls in try-catch blocks:
+
+<CodeGroup>
+
+```javascript JavaScript
+try {
+  const response = await trainly.query({
+    question: 'What is the conclusion?'
+  });
+
+  console.log(response.answer);
+
+} catch (error) {
+  if (error.status === 429) {
+    console.error('Rate limit exceeded. Please wait and retry.');
+  } else if (error.status === 401) {
+    console.error('Invalid API key');
+  } else if (error.status === 400) {
+    console.error('Bad request:', error.message);
+  } else {
+    console.error('Error:', error.message);
+  }
+}
+```
+
+```python Python
+from trainly.exceptions import (
+    RateLimitError,
+    AuthenticationError,
+    ValidationError
+)
+
+try:
+    response = trainly.query(
+        question="What is the conclusion?"
+    )
+    print(response.answer)
+
+except RateLimitError:
+    print("Rate limit exceeded. Please wait and retry.")
+except AuthenticationError:
+    print("Invalid API key")
+except ValidationError as e:
+    print(f"Bad request: {e}")
+except Exception as e:
+    print(f"Error: {e}")
+```
+
+</CodeGroup>
+
+## Configuration Options
+
+Both SDKs support extensive configuration:
+
+<CodeGroup>
+
+```javascript JavaScript
+const trainly = new TrainlyClient({
+  apiKey: 'tk_your_api_key',
+  chatId: 'chat_abc123',
+
+  // Optional configurations
+  baseUrl: 'https://api.trainly.com',
+  timeout: 30000, // 30 seconds
+  maxRetries: 3,
+  retryDelay: 1000, // 1 second
+
+  // Default query options
+  defaultModel: 'gpt-4o-mini',
+  defaultTemperature: 0.7,
+  defaultMaxTokens: 1000
+});
+```
+
+```python Python
+trainly = TrainlyClient(
+    api_key="tk_your_api_key",
+    chat_id="chat_abc123",
+
+    # Optional configurations
+    base_url="https://api.trainly.com",
+    timeout=30.0,  # 30 seconds
+    max_retries=3,
+    retry_delay=1.0,  # 1 second
+
+    # Default query options
+    default_model="gpt-4o-mini",
+    default_temperature=0.7,
+    default_max_tokens=1000
+)
+```
+
+</CodeGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="JavaScript Guide" icon="js" href="/javascript-sdk">
+    Comprehensive JavaScript/TypeScript SDK documentation
+  </Card>
+  <Card title="Python Guide" icon="python" href="/python-sdk">
+    Comprehensive Python SDK documentation
+  </Card>
+  <Card title="API Reference" icon="book" href="/api-reference/introduction">
+    Complete REST API documentation
+  </Card>
+  <Card title="Examples" icon="code" href="/examples">
+    Real-world integration examples
+  </Card>
+</CardGroup>
+
+## Getting Help
+
+<AccordionGroup>
+  <Accordion title="Common Issues">
+    **API Key Not Working**
+    - Make sure API access is enabled in chat settings
+    - Verify the chat has published settings
+    - Check that the API key is correct (starts with `tk_`)
+
+    **Rate Limit Errors**
+    - Default limit is 60 requests/minute
+    - Implement exponential backoff in your retry logic
+    - Consider caching responses for common queries
+
+    **Empty Responses**
+    - Ensure documents are uploaded and processed
+    - Check that published settings include the right context files
+    - Verify your question is relevant to the uploaded documents
+  </Accordion>
+
+  <Accordion title="Support Channels">
+    - **Email**: support@trainly.com
+    - **Discord**: [Join our community](https://discord.gg/trainly)
+    - **GitHub**: [Report issues](https://github.com/trainly/sdk/issues)
+    - **Docs**: [docs.trainly.com](https://docs.trainly.com)
+  </Accordion>
+</AccordionGroup>
+
+## SDK Features Comparison
+
+| Feature | JavaScript | Python | REST API |
+|---------|-----------|--------|----------|
+| Query Documents | ✅ | ✅ | ✅ |
+| Streaming Responses | ✅ | ✅ | ✅ |
+| File Upload | ✅ | ✅ | ✅ |
+| File Management | ✅ | ✅ | ✅ |
+| V1 OAuth Auth | ✅ | ✅ | ✅ |
+| Scope Filtering | ✅ | ✅ | ✅ |
+| TypeScript Types | ✅ | N/A | N/A |
+| Type Hints | N/A | ✅ | N/A |
+| Async/Await | ✅ | ✅ | N/A |
+| Browser Support | ✅ | ❌ | ✅ |
+| Retry Logic | ✅ | ✅ | ❌ |
+| Rate Limiting | ✅ | ✅ | ❌ |
+
+<Tip>
+  Both SDKs provide the same core functionality with idiomatic APIs for their respective languages.
+</Tip>
+
