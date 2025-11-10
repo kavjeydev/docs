@@ -7,9 +7,7 @@ description: "Understanding Trainly's credit system and model pricing"
 
 Trainly uses a credit-based system for API usage. Credits are consumed based on the AI model used and the number of tokens processed.
 
-<Info>
-  1 credit = 1,000 tokens with GPT-4o-mini (baseline model)
-</Info>
+<Info>1 credit = 1,000 tokens with GPT-4o-mini (baseline model)</Info>
 
 ## How Credits Work
 
@@ -22,6 +20,7 @@ credits = (tokens / 1000) × model_multiplier
 ```
 
 **Example:**
+
 - Question: 50 tokens
 - Answer: 200 tokens
 - Total: 250 tokens
@@ -37,12 +36,14 @@ tokens ≈ characters / 4
 ```
 
 **Example:**
+
 - Question: "What are the main findings?" (28 chars) ≈ 7 tokens
 - Answer: 800 characters ≈ 200 tokens
 - Total: ~207 tokens ≈ **0.21 credits**
 
 <Note>
-  Trainly calculates credits based on actual usage, not estimates. You only pay for what you use!
+  Trainly calculates credits based on actual usage, not estimates. You only pay
+  for what you use!
 </Note>
 
 ## Model Pricing
@@ -57,26 +58,20 @@ tokens ≈ characters / 4
     - Recommended for production
   </Card>
 
-  <Card title="GPT-3.5-turbo" icon="gauge">
-    **0.7x multiplier** (30% cheaper)
-    - Fast responses
-    - Good for simple queries
-    - Lower quality than GPT-4o-mini
-  </Card>
+<Card title="GPT-3.5-turbo" icon="gauge">
+  **0.7x multiplier** (30% cheaper) - Fast responses - Good for simple queries -
+  Lower quality than GPT-4o-mini
+</Card>
 
-  <Card title="GPT-4o" icon="sparkles">
-    **15x multiplier**
-    - Advanced reasoning
-    - Better for complex analysis
-    - Extended context window
-  </Card>
+<Card title="GPT-4o" icon="sparkles">
+  **15x multiplier** - Advanced reasoning - Better for complex analysis -
+  Extended context window
+</Card>
 
-  <Card title="GPT-4-turbo" icon="rocket">
-    **12x multiplier**
-    - High performance
-    - Vision capabilities
-    - Large context window
-  </Card>
+<Card title="GPT-4-turbo" icon="rocket">
+  **12x multiplier** - High performance - Vision capabilities - Large context
+  window
+</Card>
 
   <Card title="GPT-4" icon="crown">
     **18x multiplier**
@@ -96,19 +91,15 @@ tokens ≈ characters / 4
     - Good value
   </Card>
 
-  <Card title="Claude 3 Sonnet" icon="sparkles">
-    **8x multiplier**
-    - Balanced performance
-    - Good for analysis
-    - Extended thinking
-  </Card>
+<Card title="Claude 3 Sonnet" icon="sparkles">
+  **8x multiplier** - Balanced performance - Good for analysis - Extended
+  thinking
+</Card>
 
-  <Card title="Claude 3.5 Sonnet" icon="star">
-    **10x multiplier**
-    - Latest Sonnet version
-    - Improved capabilities
-    - Better reasoning
-  </Card>
+<Card title="Claude 3.5 Sonnet" icon="star">
+  **10x multiplier** - Latest Sonnet version - Improved capabilities - Better
+  reasoning
+</Card>
 
   <Card title="Claude 3 Opus" icon="crown">
     **20x multiplier**
@@ -147,21 +138,17 @@ tokens ≈ characters / 4
     - Credits: (108 / 1000) × 1 = **0.108 credits**
   </Accordion>
 
-  <Accordion title="Detailed Analysis (GPT-4o)">
-    **Question:** "Analyze the methodology and findings in detail"
-    - Question tokens: ~15
-    - Answer tokens: ~800
-    - Total: 815 tokens
-    - Credits: (815 / 1000) × 15 = **12.225 credits**
-  </Accordion>
+<Accordion title="Detailed Analysis (GPT-4o)">
+  **Question:** "Analyze the methodology and findings in detail" - Question
+  tokens: ~15 - Answer tokens: ~800 - Total: 815 tokens - Credits: (815 / 1000)
+  × 15 = **12.225 credits**
+</Accordion>
 
-  <Accordion title="Code Explanation (Claude 3 Opus)">
-    **Question:** "Explain this codebase architecture"
-    - Question tokens: ~10
-    - Answer tokens: ~1,200
-    - Total: 1,210 tokens
-    - Credits: (1,210 / 1000) × 20 = **24.2 credits**
-  </Accordion>
+<Accordion title="Code Explanation (Claude 3 Opus)">
+  **Question:** "Explain this codebase architecture" - Question tokens: ~10 -
+  Answer tokens: ~1,200 - Total: 1,210 tokens - Credits: (1,210 / 1000) × 20 =
+  **24.2 credits**
+</Accordion>
 
   <Accordion title="Bulk Processing (GPT-3.5-turbo)">
     **50 Questions** with avg 150 tokens each
@@ -176,11 +163,11 @@ tokens ≈ characters / 4
 
 ```javascript
 // JavaScript
-import { TrainlyClient } from '@trainly/sdk';
+import { TrainlyClient } from "@react/trainly";
 
 const trainly = new TrainlyClient({
-  apiKey: 'tk_your_api_key',
-  chatId: 'chat_abc123'
+  apiKey: "tk_your_api_key",
+  chatId: "chat_abc123",
 });
 
 // Check remaining credits
@@ -217,7 +204,7 @@ interface UsageTracker {
 const usage: UsageTracker = {
   requests: 0,
   totalCredits: 0,
-  averageCreditsPerRequest: 0
+  averageCreditsPerRequest: 0,
 };
 
 async function trackedQuery(question: string) {
@@ -232,7 +219,9 @@ async function trackedQuery(question: string) {
   usage.averageCreditsPerRequest = usage.totalCredits / usage.requests;
 
   console.log(`Credits used: ${creditsUsed.toFixed(3)}`);
-  console.log(`Total usage: ${usage.totalCredits.toFixed(2)} credits over ${usage.requests} requests`);
+  console.log(
+    `Total usage: ${usage.totalCredits.toFixed(2)} credits over ${usage.requests} requests`,
+  );
 
   return response;
 }
@@ -328,6 +317,7 @@ except Exception as e:
         model="gpt-4o"  # 15x multiplier - overkill!
     )
     ```
+
   </Accordion>
 
   <Accordion title="2. Limit Response Length">
@@ -346,6 +336,7 @@ except Exception as e:
         max_tokens=1000  # Detailed answer needed
     )
     ```
+
   </Accordion>
 
   <Accordion title="3. Cache Common Queries">
@@ -364,6 +355,7 @@ except Exception as e:
     # Second call - uses cache, no credits
     response2 = cached_query("What is AI?")
     ```
+
   </Accordion>
 
   <Accordion title="4. Use Scope Filters">
@@ -381,6 +373,7 @@ except Exception as e:
         scope_filters={"version": "2.0"}
     )  # Fewer tokens, lower cost
     ```
+
   </Accordion>
 
   <Accordion title="5. Batch Processing">
@@ -397,6 +390,7 @@ except Exception as e:
     )
     response = trainly.query(question=combined_question)
     ```
+
   </Accordion>
 </AccordionGroup>
 
@@ -599,7 +593,7 @@ const monthlyCalculation = {
   tokensPerQuery: 500,
   totalTokens: 10_000 * 500, // 5,000,000 tokens
   credits: (5_000_000 / 1000) * 1, // 5,000 credits
-  model: 'gpt-4o-mini'
+  model: "gpt-4o-mini",
 };
 
 console.log(`Monthly cost: ${monthlyCalculation.credits} credits`);
@@ -608,10 +602,12 @@ console.log(`Monthly cost: ${monthlyCalculation.credits} credits`);
 const expensiveModel = {
   ...monthlyCalculation,
   credits: (5_000_000 / 1000) * 15, // 75,000 credits!
-  model: 'gpt-4o'
+  model: "gpt-4o",
 };
 
-console.log(`With GPT-4o: ${expensiveModel.credits} credits (15x more expensive!)`);
+console.log(
+  `With GPT-4o: ${expensiveModel.credits} credits (15x more expensive!)`,
+);
 ```
 
 ## Insufficient Credits Handling
@@ -619,21 +615,20 @@ console.log(`With GPT-4o: ${expensiveModel.credits} credits (15x more expensive!
 ### Graceful Error Handling
 
 ```javascript
-import { TrainlyClient, InsufficientCreditsError } from '@trainly/sdk';
+import { TrainlyClient, InsufficientCreditsError } from "@react/trainly";
 
 const trainly = new TrainlyClient({
-  apiKey: 'tk_your_api_key',
-  chatId: 'chat_abc123'
+  apiKey: "tk_your_api_key",
+  chatId: "chat_abc123",
 });
 
 try {
   const response = await trainly.query({
-    question: 'What is the conclusion?',
-    model: 'gpt-4o'
+    question: "What is the conclusion?",
+    model: "gpt-4o",
   });
 
   console.log(response.answer);
-
 } catch (error) {
   if (error instanceof InsufficientCreditsError) {
     console.error(`Insufficient credits!`);
@@ -643,9 +638,9 @@ try {
 
     // Notify user to upgrade
     notifyUser({
-      type: 'credit_limit',
-      message: 'Please purchase more credits to continue',
-      upgradeUrl: 'https://trainly.com/billing'
+      type: "credit_limit",
+      message: "Please purchase more credits to continue",
+      upgradeUrl: "https://trainly.com/billing",
     });
   }
 }
@@ -692,21 +687,15 @@ except InsufficientCreditsError as e:
     - Community support
   </Card>
 
-  <Card title="Developer" icon="code">
-    **10,000 credits/month**
-    - $29/month
-    - All features
-    - Email support
-    - Analytics dashboard
-  </Card>
+<Card title="Developer" icon="code">
+  **10,000 credits/month** - $29/month - All features - Email support -
+  Analytics dashboard
+</Card>
 
-  <Card title="Pro" icon="rocket">
-    **100,000 credits/month**
-    - $249/month
-    - Priority support
-    - Advanced analytics
-    - Custom models
-  </Card>
+<Card title="Pro" icon="rocket">
+  **100,000 credits/month** - $249/month - Priority support - Advanced analytics
+  - Custom models
+</Card>
 
   <Card title="Enterprise" icon="building">
     **Custom credits**
@@ -723,7 +712,7 @@ except InsufficientCreditsError as e:
 
 ```typescript
 // analytics.ts
-import { TrainlyClient } from '@trainly/sdk';
+import { TrainlyClient } from "@react/trainly";
 
 interface UsageMetrics {
   date: string;
@@ -743,7 +732,7 @@ class UsageAnalytics {
   }
 
   trackQuery(model: string, tokens: number) {
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toISOString().split("T")[0];
     const multiplier = MODEL_MULTIPLIERS[model] || 1;
     const credits = (tokens / 1000) * multiplier;
 
@@ -754,7 +743,7 @@ class UsageAnalytics {
         queries: 0,
         credits: 0,
         avgCreditsPerQuery: 0,
-        models: {}
+        models: {},
       };
       this.metrics.set(today, metrics);
     }
@@ -766,23 +755,24 @@ class UsageAnalytics {
   }
 
   getDailyReport(date?: string): UsageMetrics | null {
-    const key = date || new Date().toISOString().split('T')[0];
+    const key = date || new Date().toISOString().split("T")[0];
     return this.metrics.get(key) || null;
   }
 
   getMonthlyReport(): UsageMetrics[] {
-    return Array.from(this.metrics.values())
-      .filter(m => {
-        const metricDate = new Date(m.date);
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        return metricDate >= thirtyDaysAgo;
-      });
+    return Array.from(this.metrics.values()).filter((m) => {
+      const metricDate = new Date(m.date);
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      return metricDate >= thirtyDaysAgo;
+    });
   }
 
   getTotalCredits(): number {
-    return Array.from(this.metrics.values())
-      .reduce((sum, m) => sum + m.credits, 0);
+    return Array.from(this.metrics.values()).reduce(
+      (sum, m) => sum + m.credits,
+      0,
+    );
   }
 }
 
@@ -790,15 +780,15 @@ class UsageAnalytics {
 const analytics = new UsageAnalytics(trainly);
 
 // After each query
-const response = await trainly.query({ question: 'What is AI?' });
-analytics.trackQuery('gpt-4o-mini', response.usage.total_tokens);
+const response = await trainly.query({ question: "What is AI?" });
+analytics.trackQuery("gpt-4o-mini", response.usage.total_tokens);
 
 // Generate reports
 const dailyReport = analytics.getDailyReport();
-console.log('Today:', dailyReport);
+console.log("Today:", dailyReport);
 
 const monthlyReport = analytics.getMonthlyReport();
-console.log('This month:', analytics.getTotalCredits(), 'credits');
+console.log("This month:", analytics.getTotalCredits(), "credits");
 ```
 
 ## Best Practices
@@ -831,21 +821,24 @@ console.log('This month:', analytics.getTotalCredits(), 'credits');
     API requests will fail with an `InsufficientCreditsError`. You'll need to purchase more credits or upgrade your plan to continue.
   </Accordion>
 
-  <Accordion title="Do credits expire?">
-    No, credits never expire. Unused credits roll over month to month.
-  </Accordion>
+<Accordion title="Do credits expire?">
+  No, credits never expire. Unused credits roll over month to month.
+</Accordion>
 
-  <Accordion title="Can I get a refund for unused credits?">
-    Credits are non-refundable, but they never expire so you can use them whenever needed.
-  </Accordion>
+<Accordion title="Can I get a refund for unused credits?">
+  Credits are non-refundable, but they never expire so you can use them whenever
+  needed.
+</Accordion>
 
-  <Accordion title="How are credits calculated for streaming?">
-    The same way as regular queries - based on total tokens (question + answer) and model multiplier.
-  </Accordion>
+<Accordion title="How are credits calculated for streaming?">
+  The same way as regular queries - based on total tokens (question + answer)
+  and model multiplier.
+</Accordion>
 
-  <Accordion title="Do file uploads consume credits?">
-    No, file uploads and storage do not consume credits. Only AI model queries consume credits.
-  </Accordion>
+<Accordion title="Do file uploads consume credits?">
+  No, file uploads and storage do not consume credits. Only AI model queries
+  consume credits.
+</Accordion>
 
   <Accordion title="Can I see detailed usage breakdown?">
     Yes, the Trainly dashboard provides detailed analytics showing credit usage by model, date, and chat.
@@ -858,14 +851,21 @@ console.log('This month:', analytics.getTotalCredits(), 'credits');
   <Card title="Get Started" icon="rocket" href="/quickstart">
     Start building with free credits
   </Card>
-  <Card title="Upgrade Plan" icon="credit-card" href="https://trainly.com/pricing">
+  <Card
+    title="Upgrade Plan"
+    icon="credit-card"
+    href="https://trainly.com/pricing"
+  >
     View pricing and upgrade options
   </Card>
-  <Card title="Usage Dashboard" icon="chart-bar" href="https://trainly.com/dashboard">
+  <Card
+    title="Usage Dashboard"
+    icon="chart-bar"
+    href="https://trainly.com/dashboard"
+  >
     Monitor your credit usage
   </Card>
   <Card title="Cost Optimization" icon="piggy-bank" href="/optimization-guide">
     Learn how to optimize costs
   </Card>
 </CardGroup>
-

@@ -266,12 +266,12 @@ export function FileUploader({ chatId }: FileUploaderProps) {
 
 ```typescript
 // app/api/query/route.ts
-import { TrainlyClient } from '@trainly/sdk';
-import { NextRequest, NextResponse } from 'next/server';
+import { TrainlyClient } from "@react/trainly";
+import { NextRequest, NextResponse } from "next/server";
 
 const trainly = new TrainlyClient({
   apiKey: process.env.TRAINLY_API_KEY!,
-  chatId: process.env.TRAINLY_CHAT_ID!
+  chatId: process.env.TRAINLY_CHAT_ID!,
 });
 
 export async function POST(request: NextRequest) {
@@ -280,19 +280,18 @@ export async function POST(request: NextRequest) {
 
     const response = await trainly.query({
       question,
-      model: 'gpt-4o-mini'
+      model: "gpt-4o-mini",
     });
 
     return NextResponse.json({
       answer: response.answer,
       context: response.context.slice(0, 5), // Limit citations
-      usage: response.usage
+      usage: response.usage,
     });
-
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message },
-      { status: error.status || 500 }
+      { status: error.status || 500 },
     );
   }
 }
@@ -300,25 +299,22 @@ export async function POST(request: NextRequest) {
 
 ```typescript
 // app/api/upload/route.ts
-import { TrainlyClient } from '@trainly/sdk';
-import { NextRequest, NextResponse } from 'next/server';
+import { TrainlyClient } from "@react/trainly";
+import { NextRequest, NextResponse } from "next/server";
 
 const trainly = new TrainlyClient({
   apiKey: process.env.TRAINLY_API_KEY!,
-  chatId: process.env.TRAINLY_CHAT_ID!
+  chatId: process.env.TRAINLY_CHAT_ID!,
 });
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-    const file = formData.get('file') as File;
-    const chatId = formData.get('chatId') as string;
+    const file = formData.get("file") as File;
+    const chatId = formData.get("chatId") as string;
 
     if (!file) {
-      return NextResponse.json(
-        { error: 'No file provided' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
     // Convert file to buffer
@@ -328,15 +324,14 @@ export async function POST(request: NextRequest) {
     // Upload to Trainly
     const result = await trainly.uploadFile({
       file: buffer,
-      filename: file.name
+      filename: file.name,
     });
 
     return NextResponse.json(result);
-
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message },
-      { status: error.status || 500 }
+      { status: error.status || 500 },
     );
   }
 }
@@ -439,7 +434,7 @@ if __name__ == "__main__":
 
 ```typescript
 // lib/trainly-tenant.ts
-import { TrainlyClient } from '@trainly/sdk';
+import { TrainlyClient } from "@react/trainly";
 
 interface TenantConfig {
   tenantId: string;
@@ -455,7 +450,7 @@ export class TenantTrainlyClient {
     this.config = config;
     this.client = new TrainlyClient({
       apiKey: process.env.TRAINLY_API_KEY!,
-      chatId: process.env.TRAINLY_CHAT_ID!
+      chatId: process.env.TRAINLY_CHAT_ID!,
     });
   }
 
@@ -465,8 +460,8 @@ export class TenantTrainlyClient {
       scopeFilters: {
         tenant_id: this.config.tenantId,
         workspace_id: this.config.workspaceId,
-        access_level: 'member'
-      }
+        access_level: "member",
+      },
     });
   }
 
@@ -477,8 +472,8 @@ export class TenantTrainlyClient {
         tenant_id: this.config.tenantId,
         workspace_id: this.config.workspaceId,
         uploaded_by: this.config.userId,
-        ...metadata
-      }
+        ...metadata,
+      },
     });
   }
 
@@ -486,18 +481,18 @@ export class TenantTrainlyClient {
     const files = await this.client.listFiles();
 
     // Filter by tenant (additional client-side check)
-    return files.files.filter(file =>
-      file.file_id.includes(this.config.tenantId)
+    return files.files.filter((file) =>
+      file.file_id.includes(this.config.tenantId),
     );
   }
 
   async deleteDocument(fileId: string) {
     // Verify file belongs to tenant before deleting
     const files = await this.listDocuments();
-    const file = files.find(f => f.file_id === fileId);
+    const file = files.find((f) => f.file_id === fileId);
 
     if (!file) {
-      throw new Error('File not found or access denied');
+      throw new Error("File not found or access denied");
     }
 
     return await this.client.deleteFile(fileId);
@@ -506,21 +501,19 @@ export class TenantTrainlyClient {
 
 // Usage
 const tenantClient = new TenantTrainlyClient({
-  tenantId: 'tenant_acme',
-  workspaceId: 'ws_engineering',
-  userId: currentUser.id
+  tenantId: "tenant_acme",
+  workspaceId: "ws_engineering",
+  userId: currentUser.id,
 });
 
-const response = await tenantClient.query(
-  'What are our Q4 goals?'
-);
+const response = await tenantClient.query("What are our Q4 goals?");
 ```
 
 ```typescript
 // app/api/tenant/query/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import { TenantTrainlyClient } from '@/lib/trainly-tenant';
-import { getCurrentUser } from '@/lib/auth';
+import { NextRequest, NextResponse } from "next/server";
+import { TenantTrainlyClient } from "@/lib/trainly-tenant";
+import { getCurrentUser } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   try {
@@ -528,10 +521,7 @@ export async function POST(request: NextRequest) {
     const user = await getCurrentUser(request);
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { question } = await request.json();
@@ -540,19 +530,15 @@ export async function POST(request: NextRequest) {
     const trainly = new TenantTrainlyClient({
       tenantId: user.tenantId,
       workspaceId: user.workspaceId,
-      userId: user.id
+      userId: user.id,
     });
 
     // Query with automatic tenant isolation
     const response = await trainly.query(question);
 
     return NextResponse.json(response);
-
   } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 ```
@@ -847,7 +833,7 @@ if __name__ == "__main__":
 
 ```typescript
 // lib/product-search.ts
-import { TrainlyClient } from '@trainly/sdk';
+import { TrainlyClient } from "@react/trainly";
 
 interface Product {
   id: string;
@@ -863,7 +849,7 @@ export class ProductSearchService {
   constructor() {
     this.trainly = new TrainlyClient({
       apiKey: process.env.TRAINLY_API_KEY!,
-      chatId: process.env.TRAINLY_CHAT_ID!
+      chatId: process.env.TRAINLY_CHAT_ID!,
     });
   }
 
@@ -883,18 +869,21 @@ Description: ${product.description}
         product_id: product.id,
         category: product.category,
         price_range: this.getPriceRange(product.price),
-        in_stock: true
-      }
+        in_stock: true,
+      },
     });
   }
 
-  async searchProducts(query: string, filters?: {
-    category?: string;
-    maxPrice?: number;
-    minPrice?: number;
-  }) {
+  async searchProducts(
+    query: string,
+    filters?: {
+      category?: string;
+      maxPrice?: number;
+      minPrice?: number;
+    },
+  ) {
     const scopeFilters: Record<string, any> = {
-      in_stock: true
+      in_stock: true,
     };
 
     if (filters?.category) {
@@ -910,7 +899,7 @@ Description: ${product.description}
       scopeFilters,
       customPrompt: `You are a product search assistant. Help users find products
       based on their needs. List specific product names and key features.`,
-      temperature: 0.5
+      temperature: 0.5,
     });
 
     return this.parseProductResults(response.answer, response.context);
@@ -920,24 +909,24 @@ Description: ${product.description}
     return await this.trainly.query({
       question: `What products are similar to product ${productId}? Recommend complementary products.`,
       temperature: 0.7,
-      customPrompt: 'Focus on product features and customer needs.'
+      customPrompt: "Focus on product features and customer needs.",
     });
   }
 
   private getPriceRange(price: number): string {
-    if (price < 50) return 'budget';
-    if (price < 200) return 'mid';
-    if (price < 500) return 'premium';
-    return 'luxury';
+    if (price < 50) return "budget";
+    if (price < 200) return "mid";
+    if (price < 500) return "premium";
+    return "luxury";
   }
 
   private parseProductResults(answer: string, context: any[]) {
     // Extract product mentions from answer
     const products: string[] = [];
-    const lines = answer.split('\n');
+    const lines = answer.split("\n");
 
     for (const line of lines) {
-      if (line.includes('Product:') || line.match(/^\d+\./)) {
+      if (line.includes("Product:") || line.match(/^\d+\./)) {
         products.push(line.trim());
       }
     }
@@ -946,7 +935,7 @@ Description: ${product.description}
       summary: answer,
       products,
       confidence: context[0]?.score || 0,
-      sources: context.length
+      sources: context.length,
     };
   }
 }
@@ -1074,7 +1063,7 @@ if __name__ == "__main__":
 
 ```typescript
 // lib/legal-analyzer.ts
-import { TrainlyClient, QueryResponse } from '@trainly/sdk';
+import { TrainlyClient, QueryResponse } from "@react/trainly";
 
 interface ContractMetadata {
   contractId: string;
@@ -1090,7 +1079,7 @@ export class LegalAnalyzer {
   constructor() {
     this.trainly = new TrainlyClient({
       apiKey: process.env.TRAINLY_API_KEY!,
-      chatId: process.env.TRAINLY_CHAT_ID!
+      chatId: process.env.TRAINLY_CHAT_ID!,
     });
   }
 
@@ -1101,59 +1090,71 @@ export class LegalAnalyzer {
         contract_id: metadata.contractId,
         contract_type: metadata.type,
         effective_date: metadata.effectiveDate,
-        status: 'active'
-      }
+        status: "active",
+      },
     });
   }
 
   async analyzeObligations(contractId: string): Promise<string> {
     const response = await this.trainly.query({
-      question: 'List all obligations and responsibilities for each party in this contract',
+      question:
+        "List all obligations and responsibilities for each party in this contract",
       scopeFilters: { contract_id: contractId },
-      model: 'gpt-4o', // Use more powerful model for legal analysis
+      model: "gpt-4o", // Use more powerful model for legal analysis
       temperature: 0.1, // Very focused for legal accuracy
       maxTokens: 3000,
       customPrompt: `You are a legal analyst. Extract obligations precisely.
-      Use bullet points and cite specific sections.`
+      Use bullet points and cite specific sections.`,
     });
 
     return response.answer;
   }
 
   async findTerminationClauses(contractId: string): Promise<string> {
-    return (await this.trainly.query({
-      question: 'What are the termination clauses and conditions for ending this contract?',
-      scopeFilters: { contract_id: contractId },
-      model: 'claude-3-opus', // Alternative model
-      temperature: 0.1
-    })).answer;
+    return (
+      await this.trainly.query({
+        question:
+          "What are the termination clauses and conditions for ending this contract?",
+        scopeFilters: { contract_id: contractId },
+        model: "claude-3-opus", // Alternative model
+        temperature: 0.1,
+      })
+    ).answer;
   }
 
-  async checkCompliance(contractId: string, regulation: string): Promise<string> {
-    return (await this.trainly.query({
-      question: `Does this contract comply with ${regulation}? Identify any potential compliance issues.`,
-      scopeFilters: { contract_id: contractId },
-      model: 'gpt-4o',
-      temperature: 0.2
-    })).answer;
+  async checkCompliance(
+    contractId: string,
+    regulation: string,
+  ): Promise<string> {
+    return (
+      await this.trainly.query({
+        question: `Does this contract comply with ${regulation}? Identify any potential compliance issues.`,
+        scopeFilters: { contract_id: contractId },
+        model: "gpt-4o",
+        temperature: 0.2,
+      })
+    ).answer;
   }
 
   async compareContracts(contractIds: string[]): Promise<string> {
     // Don't filter by specific contract - compare all
-    return (await this.trainly.query({
-      question: 'Compare these contracts in terms of terms, obligations, and favorable conditions',
-      model: 'gpt-4o',
-      maxTokens: 4000
-    })).answer;
+    return (
+      await this.trainly.query({
+        question:
+          "Compare these contracts in terms of terms, obligations, and favorable conditions",
+        model: "gpt-4o",
+        maxTokens: 4000,
+      })
+    ).answer;
   }
 
   async extractKeyTerms(contractId: string): Promise<Dict<string, any>> {
     const questions = {
-      payment_terms: 'What are the payment terms and amounts?',
-      duration: 'What is the contract duration?',
-      renewal: 'What are the renewal terms?',
-      liability: 'What are the liability limitations?',
-      ip_rights: 'What intellectual property rights are mentioned?'
+      payment_terms: "What are the payment terms and amounts?",
+      duration: "What is the contract duration?",
+      renewal: "What are the renewal terms?",
+      liability: "What are the liability limitations?",
+      ip_rights: "What intellectual property rights are mentioned?",
     };
 
     const terms: Record<string, string> = {};
@@ -1162,7 +1163,7 @@ export class LegalAnalyzer {
       const response = await this.trainly.query({
         question,
         scopeFilters: { contract_id: contractId },
-        temperature: 0.1
+        temperature: 0.1,
       });
 
       terms[key] = response.answer;
@@ -1177,22 +1178,19 @@ const analyzer = new LegalAnalyzer();
 
 // Upload contract
 await analyzer.uploadContract(contractFile, {
-  contractId: 'contract_2024_001',
-  parties: ['Company A', 'Company B'],
-  effectiveDate: '2024-01-01',
-  expirationDate: '2025-01-01',
-  type: 'service_agreement'
+  contractId: "contract_2024_001",
+  parties: ["Company A", "Company B"],
+  effectiveDate: "2024-01-01",
+  expirationDate: "2025-01-01",
+  type: "service_agreement",
 });
 
 // Analyze obligations
-const obligations = await analyzer.analyzeObligations('contract_2024_001');
+const obligations = await analyzer.analyzeObligations("contract_2024_001");
 console.log(obligations);
 
 // Check compliance
-const compliance = await analyzer.checkCompliance(
-  'contract_2024_001',
-  'GDPR'
-);
+const compliance = await analyzer.checkCompliance("contract_2024_001", "GDPR");
 console.log(compliance);
 ```
 
@@ -1387,36 +1385,38 @@ if __name__ == "__main__":
 
 ```javascript
 // discord-bot.js
-const { Client, GatewayIntentBits } = require('discord.js');
-const { TrainlyClient } = require('@trainly/sdk');
+const { Client, GatewayIntentBits } = require("discord.js");
+const { TrainlyClient } = require("@react/trainly");
 
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent
-  ]
+    GatewayIntentBits.MessageContent,
+  ],
 });
 
 const trainly = new TrainlyClient({
   apiKey: process.env.TRAINLY_API_KEY,
-  chatId: process.env.TRAINLY_CHAT_ID
+  chatId: process.env.TRAINLY_CHAT_ID,
 });
 
-client.on('ready', () => {
+client.on("ready", () => {
   console.log(`Logged in as ${client.user.tag}`);
 });
 
-client.on('messageCreate', async (message) => {
+client.on("messageCreate", async (message) => {
   // Ignore bot messages
   if (message.author.bot) return;
 
   // Check for !ask command
-  if (message.content.startsWith('!ask ')) {
+  if (message.content.startsWith("!ask ")) {
     const question = message.content.slice(5).trim();
 
     if (!question) {
-      await message.reply('Please provide a question. Example: `!ask What is the server policy?`');
+      await message.reply(
+        "Please provide a question. Example: `!ask What is the server policy?`",
+      );
       return;
     }
 
@@ -1429,30 +1429,34 @@ client.on('messageCreate', async (message) => {
         question,
         scopeFilters: {
           server_id: message.guildId,
-          visibility: 'public'
-        }
+          visibility: "public",
+        },
       });
 
       // Send response
       await message.reply({
         content: response.answer,
-        allowedMentions: { repliedUser: false }
+        allowedMentions: { repliedUser: false },
       });
 
       // Add reactions for feedback
-      await message.react('👍');
-      await message.react('👎');
-
+      await message.react("👍");
+      await message.react("👎");
     } catch (error) {
-      console.error('Query failed:', error);
-      await message.reply('Sorry, I encountered an error processing your question.');
+      console.error("Query failed:", error);
+      await message.reply(
+        "Sorry, I encountered an error processing your question.",
+      );
     }
   }
 
   // Check for file uploads
   if (message.attachments.size > 0) {
     for (const attachment of message.attachments.values()) {
-      if (attachment.name.endsWith('.pdf') || attachment.name.endsWith('.txt')) {
+      if (
+        attachment.name.endsWith(".pdf") ||
+        attachment.name.endsWith(".txt")
+      ) {
         try {
           // Download file
           const response = await fetch(attachment.url);
@@ -1465,15 +1469,14 @@ client.on('messageCreate', async (message) => {
             scopeValues: {
               server_id: message.guildId,
               channel_id: message.channelId,
-              uploaded_by: message.author.id
-            }
+              uploaded_by: message.author.id,
+            },
           });
 
-          await message.react('✅');
-
+          await message.react("✅");
         } catch (error) {
-          console.error('Upload failed:', error);
-          await message.react('❌');
+          console.error("Upload failed:", error);
+          await message.react("❌");
         }
       }
     }
@@ -1489,11 +1492,11 @@ client.login(process.env.DISCORD_BOT_TOKEN);
 
 ```typescript
 // server.ts
-import express from 'express';
-import { TrainlyClient } from '@trainly/sdk';
-import rateLimit from 'express-rate-limit';
-import helmet from 'helmet';
-import cors from 'cors';
+import express from "express";
+import { TrainlyClient } from "@react/trainly";
+import rateLimit from "express-rate-limit";
+import helmet from "helmet";
+import cors from "cors";
 
 const app = express();
 
@@ -1505,20 +1508,23 @@ app.use(express.json());
 const limiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   max: 100, // Limit each IP to 100 requests per minute
-  message: 'Too many requests, please try again later.'
+  message: "Too many requests, please try again later.",
 });
 
-app.use('/api/', limiter);
+app.use("/api/", limiter);
 
 // Multi-tenant Trainly clients
 const trainlyClients = new Map<string, TrainlyClient>();
 
 function getTrainlyClient(tenantId: string): TrainlyClient {
   if (!trainlyClients.has(tenantId)) {
-    trainlyClients.set(tenantId, new TrainlyClient({
-      apiKey: process.env[`TRAINLY_API_KEY_${tenantId.toUpperCase()}`]!,
-      chatId: process.env[`TRAINLY_CHAT_ID_${tenantId.toUpperCase()}`]!
-    }));
+    trainlyClients.set(
+      tenantId,
+      new TrainlyClient({
+        apiKey: process.env[`TRAINLY_API_KEY_${tenantId.toUpperCase()}`]!,
+        chatId: process.env[`TRAINLY_CHAT_ID_${tenantId.toUpperCase()}`]!,
+      }),
+    );
   }
 
   return trainlyClients.get(tenantId)!;
@@ -1526,10 +1532,10 @@ function getTrainlyClient(tenantId: string): TrainlyClient {
 
 // Middleware to extract tenant
 app.use((req, res, next) => {
-  const tenantId = req.headers['x-tenant-id'] as string;
+  const tenantId = req.headers["x-tenant-id"] as string;
 
   if (!tenantId) {
-    return res.status(400).json({ error: 'X-Tenant-ID header required' });
+    return res.status(400).json({ error: "X-Tenant-ID header required" });
   }
 
   req.tenantId = tenantId;
@@ -1537,29 +1543,28 @@ app.use((req, res, next) => {
 });
 
 // Query endpoint
-app.post('/api/query', async (req, res) => {
+app.post("/api/query", async (req, res) => {
   try {
     const { question, model, temperature } = req.body;
     const trainly = getTrainlyClient(req.tenantId);
 
     const response = await trainly.query({
       question,
-      model: model || 'gpt-4o-mini',
+      model: model || "gpt-4o-mini",
       temperature: temperature || 0.7,
       scopeFilters: {
-        tenant_id: req.tenantId
-      }
+        tenant_id: req.tenantId,
+      },
     });
 
     res.json(response);
-
   } catch (error: any) {
     res.status(error.status || 500).json({ error: error.message });
   }
 });
 
 // Upload endpoint
-app.post('/api/upload', async (req, res) => {
+app.post("/api/upload", async (req, res) => {
   try {
     const trainly = getTrainlyClient(req.tenantId);
 
@@ -1567,15 +1572,14 @@ app.post('/api/upload', async (req, res) => {
     // ...
 
     res.json({ success: true });
-
   } catch (error: any) {
     res.status(error.status || 500).json({ error: error.message });
   }
 });
 
 // Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'healthy', timestamp: Date.now() });
+app.get("/health", (req, res) => {
+  res.json({ status: "healthy", timestamp: Date.now() });
 });
 
 const PORT = process.env.PORT || 3000;
@@ -1600,4 +1604,3 @@ app.listen(PORT, () => {
     Production deployment tips
   </Card>
 </CardGroup>
-

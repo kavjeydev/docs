@@ -8,7 +8,8 @@ description: "Build responsive applications with streaming responses"
 Trainly supports Server-Sent Events (SSE) for streaming AI responses in real-time. This provides a better user experience, especially for longer responses.
 
 <Info>
-  Streaming sends response chunks as they're generated, reducing perceived latency by up to 80%.
+  Streaming sends response chunks as they're generated, reducing perceived
+  latency by up to 80%.
 </Info>
 
 ## Why Use Streaming?
@@ -33,33 +34,33 @@ Trainly supports Server-Sent Events (SSE) for streaming AI responses in real-tim
 ### JavaScript/TypeScript
 
 ```typescript
-import { TrainlyClient } from '@trainly/sdk';
+import { TrainlyClient } from "@react/trainly";
 
 const trainly = new TrainlyClient({
   apiKey: process.env.TRAINLY_API_KEY!,
-  chatId: process.env.TRAINLY_CHAT_ID!
+  chatId: process.env.TRAINLY_CHAT_ID!,
 });
 
 async function streamQuery(question: string) {
   const stream = await trainly.queryStream({ question });
 
   for await (const chunk of stream) {
-    if (chunk.type === 'content') {
+    if (chunk.type === "content") {
       // Append text chunk
       process.stdout.write(chunk.data);
-    } else if (chunk.type === 'context') {
+    } else if (chunk.type === "context") {
       // Citations available
       console.log(`\nUsing ${chunk.data.length} sources`);
-    } else if (chunk.type === 'end') {
-      console.log('\n\nComplete!');
-    } else if (chunk.type === 'error') {
-      console.error('Error:', chunk.data);
+    } else if (chunk.type === "end") {
+      console.log("\n\nComplete!");
+    } else if (chunk.type === "error") {
+      console.error("Error:", chunk.data);
     }
   }
 }
 
 // Usage
-await streamQuery('Explain the methodology in detail');
+await streamQuery("Explain the methodology in detail");
 ```
 
 ### Python
@@ -99,6 +100,7 @@ curl -X POST https://api.trainly.com/v1/chat_abc123/answer_question_stream \
 ```
 
 **Response (SSE Format):**
+
 ```
 data: {"type": "context", "data": [...]}
 
@@ -116,27 +118,27 @@ data: {"type": "end"}
 ### Streaming Chat Component
 
 ```tsx
-'use client';
+"use client";
 
-import { useState, useRef, useEffect } from 'react';
-import { TrainlyClient } from '@trainly/sdk';
-import ReactMarkdown from 'react-markdown';
+import { useState, useRef, useEffect } from "react";
+import { TrainlyClient } from "@react/trainly";
+import ReactMarkdown from "react-markdown";
 
 interface Message {
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
   streaming?: boolean;
 }
 
 export function StreamingChat() {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const trainly = new TrainlyClient({
     apiKey: process.env.NEXT_PUBLIC_TRAINLY_API_KEY!,
-    chatId: process.env.NEXT_PUBLIC_TRAINLY_CHAT_ID!
+    chatId: process.env.NEXT_PUBLIC_TRAINLY_CHAT_ID!,
   });
 
   async function handleSubmit(e: React.FormEvent) {
@@ -146,20 +148,23 @@ export function StreamingChat() {
 
     // Add user message
     const userMessage: Message = {
-      role: 'user',
-      content: input
+      role: "user",
+      content: input,
     };
 
-    setMessages(prev => [...prev, userMessage]);
-    setInput('');
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
     setStreaming(true);
 
     // Add placeholder for assistant message
-    setMessages(prev => [...prev, {
-      role: 'assistant',
-      content: '',
-      streaming: true
-    }]);
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "assistant",
+        content: "",
+        streaming: true,
+      },
+    ]);
 
     try {
       // Create abort controller for cancellation
@@ -167,33 +172,33 @@ export function StreamingChat() {
 
       const stream = await trainly.queryStream({
         question: input,
-        signal: abortControllerRef.current.signal
+        signal: abortControllerRef.current.signal,
       });
 
-      let fullResponse = '';
+      let fullResponse = "";
 
       for await (const chunk of stream) {
-        if (chunk.type === 'content') {
+        if (chunk.type === "content") {
           fullResponse += chunk.data;
 
           // Update the last message (assistant)
-          setMessages(prev => {
+          setMessages((prev) => {
             const updated = [...prev];
             updated[updated.length - 1] = {
-              role: 'assistant',
+              role: "assistant",
               content: fullResponse,
-              streaming: true
+              streaming: true,
             };
             return updated;
           });
-        } else if (chunk.type === 'end') {
+        } else if (chunk.type === "end") {
           // Mark streaming complete
-          setMessages(prev => {
+          setMessages((prev) => {
             const updated = [...prev];
             updated[updated.length - 1] = {
-              role: 'assistant',
+              role: "assistant",
               content: fullResponse,
-              streaming: false
+              streaming: false,
             };
             return updated;
           });
@@ -201,20 +206,19 @@ export function StreamingChat() {
           setStreaming(false);
         }
       }
-
     } catch (error: any) {
-      if (error.name === 'AbortError') {
-        console.log('Stream cancelled by user');
+      if (error.name === "AbortError") {
+        console.log("Stream cancelled by user");
       } else {
-        console.error('Streaming error:', error);
+        console.error("Streaming error:", error);
 
         // Show error message
-        setMessages(prev => {
+        setMessages((prev) => {
           const updated = [...prev];
           updated[updated.length - 1] = {
-            role: 'assistant',
-            content: 'Sorry, an error occurred. Please try again.',
-            streaming: false
+            role: "assistant",
+            content: "Sorry, an error occurred. Please try again.",
+            streaming: false,
           };
           return updated;
         });
@@ -238,13 +242,13 @@ export function StreamingChat() {
         {messages.map((message, i) => (
           <div
             key={i}
-            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
           >
             <div
               className={`max-w-[80%] rounded-lg p-4 ${
-                message.role === 'user'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-900'
+                message.role === "user"
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-100 text-gray-900"
               }`}
             >
               <ReactMarkdown>{message.content}</ReactMarkdown>
@@ -295,34 +299,37 @@ export function StreamingChat() {
 
 ```typescript
 type StreamChunk =
-  | { type: 'context'; data: Array<{ chunk_id: string; chunk_text: string; score: number }> }
-  | { type: 'content'; data: string }
-  | { type: 'end' }
-  | { type: 'error'; data: string };
+  | {
+      type: "context";
+      data: Array<{ chunk_id: string; chunk_text: string; score: number }>;
+    }
+  | { type: "content"; data: string }
+  | { type: "end" }
+  | { type: "error"; data: string };
 
 async function typedStream(question: string): Promise<string> {
   const stream = await trainly.queryStream({ question });
 
-  let fullResponse = '';
+  let fullResponse = "";
   let citationCount = 0;
 
   for await (const chunk of stream) {
     switch (chunk.type) {
-      case 'context':
+      case "context":
         citationCount = chunk.data.length;
         console.log(`Using ${citationCount} citations`);
         break;
 
-      case 'content':
+      case "content":
         fullResponse += chunk.data;
         process.stdout.write(chunk.data);
         break;
 
-      case 'end':
-        console.log('\n\nStream complete!');
+      case "end":
+        console.log("\n\nStream complete!");
         return fullResponse;
 
-      case 'error':
+      case "error":
         throw new Error(chunk.data);
     }
   }
@@ -343,7 +350,7 @@ interface StreamProgress {
 
 async function streamWithProgress(
   question: string,
-  onProgress: (progress: StreamProgress) => void
+  onProgress: (progress: StreamProgress) => void,
 ) {
   const stream = await trainly.queryStream({ question });
 
@@ -351,26 +358,26 @@ async function streamWithProgress(
     chunksReceived: 0,
     charactersReceived: 0,
     estimatedProgress: 0,
-    citationCount: 0
+    citationCount: 0,
   };
 
   for await (const chunk of stream) {
-    if (chunk.type === 'context') {
+    if (chunk.type === "context") {
       progress.citationCount = chunk.data.length;
-    } else if (chunk.type === 'content') {
+    } else if (chunk.type === "content") {
       progress.chunksReceived += 1;
       progress.charactersReceived += chunk.data.length;
 
       // Estimate progress (typical response is ~500 chars)
       progress.estimatedProgress = Math.min(
         (progress.charactersReceived / 500) * 100,
-        99
+        99,
       );
 
       onProgress({ ...progress });
 
       process.stdout.write(chunk.data);
-    } else if (chunk.type === 'end') {
+    } else if (chunk.type === "end") {
       progress.estimatedProgress = 100;
       onProgress({ ...progress });
     }
@@ -378,7 +385,7 @@ async function streamWithProgress(
 }
 
 // Usage
-await streamWithProgress('Explain the methodology', (progress) => {
+await streamWithProgress("Explain the methodology", (progress) => {
   console.log(`Progress: ${progress.estimatedProgress.toFixed(0)}%`);
   console.log(`Characters: ${progress.charactersReceived}`);
 });
@@ -389,7 +396,7 @@ await streamWithProgress('Explain the methodology', (progress) => {
 ```typescript
 async function cancellableStream(
   question: string,
-  onCancel: () => void
+  onCancel: () => void,
 ): Promise<{ cancel: () => void }> {
   const abortController = new AbortController();
 
@@ -398,19 +405,19 @@ async function cancellableStream(
     try {
       const stream = await trainly.queryStream({
         question,
-        signal: abortController.signal
+        signal: abortController.signal,
       });
 
       for await (const chunk of stream) {
-        if (chunk.type === 'content') {
+        if (chunk.type === "content") {
           console.log(chunk.data);
-        } else if (chunk.type === 'end') {
-          console.log('Complete!');
+        } else if (chunk.type === "end") {
+          console.log("Complete!");
         }
       }
     } catch (error: any) {
-      if (error.name === 'AbortError') {
-        console.log('Stream cancelled');
+      if (error.name === "AbortError") {
+        console.log("Stream cancelled");
         onCancel();
       } else {
         throw error;
@@ -420,13 +427,13 @@ async function cancellableStream(
 
   // Return cancel function
   return {
-    cancel: () => abortController.abort()
+    cancel: () => abortController.abort(),
   };
 }
 
 // Usage
-const stream = await cancellableStream('Long question...', () => {
-  console.log('User cancelled the stream');
+const stream = await cancellableStream("Long question...", () => {
+  console.log("User cancelled the stream");
 });
 
 // Cancel after 5 seconds
@@ -506,11 +513,11 @@ answers = asyncio.run(process_multiple_streams(questions))
 
 ```typescript
 // app/api/stream/route.ts
-import { TrainlyClient } from '@trainly/sdk';
+import { TrainlyClient } from "@react/trainly";
 
 const trainly = new TrainlyClient({
   apiKey: process.env.TRAINLY_API_KEY!,
-  chatId: process.env.TRAINLY_CHAT_ID!
+  chatId: process.env.TRAINLY_CHAT_ID!,
 });
 
 export async function POST(request: Request) {
@@ -533,21 +540,21 @@ export async function POST(request: Request) {
         controller.close();
       } catch (error) {
         const errorData = `data: ${JSON.stringify({
-          type: 'error',
-          data: error.message
+          type: "error",
+          data: error.message,
         })}\n\n`;
         controller.enqueue(encoder.encode(errorData));
         controller.close();
       }
-    }
+    },
   });
 
   return new Response(stream, {
     headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive'
-    }
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    },
   });
 }
 ```
@@ -557,7 +564,7 @@ export async function POST(request: Request) {
 ```typescript
 // hooks/useTrainlyStream.ts
 import { useState, useCallback, useRef } from 'react';
-import { TrainlyClient } from '@trainly/sdk';
+import { TrainlyClient } from '@react/trainly';
 
 interface UseStreamOptions {
   onComplete?: (answer: string) => void;
@@ -672,28 +679,24 @@ function ChatComponent() {
         :disabled="streaming"
       />
 
-      <button v-if="streaming" @click="cancel" type="button">
-        Cancel
-      </button>
-      <button v-else type="submit" :disabled="!input.trim()">
-        Send
-      </button>
+      <button v-if="streaming" @click="cancel" type="button">Cancel</button>
+      <button v-else type="submit" :disabled="!input.trim()">Send</button>
     </form>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { TrainlyClient } from '@trainly/sdk';
-import { marked } from 'marked';
+import { ref } from "vue";
+import { TrainlyClient } from "@react/trainly";
+import { marked } from "marked";
 
 const trainly = new TrainlyClient({
   apiKey: import.meta.env.VITE_TRAINLY_API_KEY,
-  chatId: import.meta.env.VITE_TRAINLY_CHAT_ID
+  chatId: import.meta.env.VITE_TRAINLY_CHAT_ID,
 });
 
 const messages = ref([]);
-const input = ref('');
+const input = ref("");
 const streaming = ref(false);
 let abortController = null;
 
@@ -705,19 +708,19 @@ async function handleSubmit() {
   // Add user message
   messages.value.push({
     id: Date.now(),
-    role: 'user',
-    content: question
+    role: "user",
+    content: question,
   });
 
-  input.value = '';
+  input.value = "";
   streaming.value = true;
 
   // Add assistant message
   const assistantMessage = {
     id: Date.now() + 1,
-    role: 'assistant',
-    content: '',
-    streaming: true
+    role: "assistant",
+    content: "",
+    streaming: true,
   };
   messages.value.push(assistantMessage);
 
@@ -726,21 +729,20 @@ async function handleSubmit() {
 
     const stream = await trainly.queryStream({
       question,
-      signal: abortController.signal
+      signal: abortController.signal,
     });
 
     for await (const chunk of stream) {
-      if (chunk.type === 'content') {
+      if (chunk.type === "content") {
         assistantMessage.content += chunk.data;
-      } else if (chunk.type === 'end') {
+      } else if (chunk.type === "end") {
         assistantMessage.streaming = false;
       }
     }
-
   } catch (error) {
-    if (error.name !== 'AbortError') {
-      console.error('Streaming error:', error);
-      assistantMessage.content = 'Error occurred. Please try again.';
+    if (error.name !== "AbortError") {
+      console.error("Streaming error:", error);
+      assistantMessage.content = "Error occurred. Please try again.";
     }
   } finally {
     streaming.value = false;
@@ -763,22 +765,22 @@ function renderMarkdown(content: string) {
 ### Express SSE Endpoint
 
 ```javascript
-const express = require('express');
-const { TrainlyClient } = require('@trainly/sdk');
+const express = require("express");
+const { TrainlyClient } = require("@react/trainly");
 
 const app = express();
 const trainly = new TrainlyClient({
   apiKey: process.env.TRAINLY_API_KEY,
-  chatId: process.env.TRAINLY_CHAT_ID
+  chatId: process.env.TRAINLY_CHAT_ID,
 });
 
-app.post('/api/stream', async (req, res) => {
+app.post("/api/stream", async (req, res) => {
   const { question } = req.body;
 
   // Set SSE headers
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
 
   try {
     const stream = await trainly.queryStream({ question });
@@ -789,20 +791,21 @@ app.post('/api/stream', async (req, res) => {
     }
 
     res.end();
-
   } catch (error) {
-    res.write(`data: ${JSON.stringify({
-      type: 'error',
-      data: error.message
-    })}\n\n`);
+    res.write(
+      `data: ${JSON.stringify({
+        type: "error",
+        data: error.message,
+      })}\n\n`,
+    );
     res.end();
   }
 });
 
 // Handle client disconnect
 app.use((req, res, next) => {
-  req.on('close', () => {
-    console.log('Client disconnected');
+  req.on("close", () => {
+    console.log("Client disconnected");
   });
   next();
 });
@@ -858,37 +861,37 @@ async def stream_query(question: str):
 
 ```typescript
 // Collaborative document Q&A
-import { io, Socket } from 'socket.io-client';
-import { TrainlyClient } from '@trainly/sdk';
+import { io, Socket } from "socket.io-client";
+import { TrainlyClient } from "@react/trainly";
 
 class CollaborativeChat {
   private socket: Socket;
   private trainly: TrainlyClient;
 
   constructor(roomId: string) {
-    this.socket = io('https://your-server.com');
+    this.socket = io("https://your-server.com");
     this.trainly = new TrainlyClient({
       apiKey: process.env.TRAINLY_API_KEY!,
-      chatId: process.env.TRAINLY_CHAT_ID!
+      chatId: process.env.TRAINLY_CHAT_ID!,
     });
 
-    this.socket.emit('join-room', roomId);
+    this.socket.emit("join-room", roomId);
     this.setupListeners();
   }
 
   setupListeners() {
-    this.socket.on('user-query', async (data) => {
+    this.socket.on("user-query", async (data) => {
       console.log(`${data.userName} asked: ${data.question}`);
 
       // Broadcast streaming response to all users
       const stream = await this.trainly.queryStream({
-        question: data.question
+        question: data.question,
       });
 
       for await (const chunk of stream) {
-        this.socket.emit('stream-chunk', {
+        this.socket.emit("stream-chunk", {
           queryId: data.queryId,
-          chunk
+          chunk,
         });
       }
     });
@@ -898,25 +901,25 @@ class CollaborativeChat {
     const queryId = crypto.randomUUID();
 
     // Broadcast question to room
-    this.socket.emit('user-query', {
+    this.socket.emit("user-query", {
       queryId,
       question,
-      userName: 'Current User',
-      timestamp: Date.now()
+      userName: "Current User",
+      timestamp: Date.now(),
     });
   }
 }
 
 // Usage
-const chat = new CollaborativeChat('room_123');
-await chat.askQuestion('What is the methodology?');
+const chat = new CollaborativeChat("room_123");
+await chat.askQuestion("What is the methodology?");
 ```
 
 ### Real-Time Updates
 
 ```typescript
 // Notify users when new documents are uploaded
-import { EventEmitter } from 'events';
+import { EventEmitter } from "events";
 
 class DocumentWatcher extends EventEmitter {
   private trainly: TrainlyClient;
@@ -940,10 +943,10 @@ class DocumentWatcher extends EventEmitter {
           this.knownFiles.add(file.file_id);
 
           // Emit new document event
-          this.emit('new-document', {
+          this.emit("new-document", {
             fileId: file.file_id,
             filename: file.filename,
-            size: file.size_bytes
+            size: file.size_bytes,
           });
         }
       }
@@ -954,11 +957,11 @@ class DocumentWatcher extends EventEmitter {
 // Usage
 const watcher = new DocumentWatcher(trainly);
 
-watcher.on('new-document', (doc) => {
-  console.log('New document uploaded:', doc.filename);
+watcher.on("new-document", (doc) => {
+  console.log("New document uploaded:", doc.filename);
 
   // Notify all connected clients via WebSocket
-  io.emit('document-uploaded', doc);
+  io.emit("document-uploaded", doc);
 });
 ```
 
@@ -971,11 +974,11 @@ watcher.on('new-document', (doc) => {
 async function processStreamInChunks(question: string) {
   const stream = await trainly.queryStream({ question });
 
-  let buffer = '';
+  let buffer = "";
   const chunkSize = 50; // characters
 
   for await (const chunk of stream) {
-    if (chunk.type === 'content') {
+    if (chunk.type === "content") {
       buffer += chunk.data;
 
       // Process complete chunks
@@ -987,9 +990,9 @@ async function processStreamInChunks(question: string) {
         renderChunk(processChunk);
 
         // Small delay for smooth rendering
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await new Promise((resolve) => setTimeout(resolve, 10));
       }
-    } else if (chunk.type === 'end') {
+    } else if (chunk.type === "end") {
       // Process remaining buffer
       if (buffer) {
         renderChunk(buffer);
@@ -999,7 +1002,7 @@ async function processStreamInChunks(question: string) {
 }
 
 function renderChunk(text: string) {
-  const element = document.getElementById('answer');
+  const element = document.getElementById("answer");
   if (element) {
     element.textContent += text;
   }
@@ -1067,49 +1070,50 @@ async def buffered_stream(question: str):
 ```typescript
 async function robustStream(
   question: string,
-  maxRetries: number = 3
+  maxRetries: number = 3,
 ): Promise<string> {
   let attempt = 0;
 
   while (attempt < maxRetries) {
     try {
       const stream = await trainly.queryStream({ question });
-      let fullResponse = '';
+      let fullResponse = "";
 
       for await (const chunk of stream) {
-        if (chunk.type === 'content') {
+        if (chunk.type === "content") {
           fullResponse += chunk.data;
           process.stdout.write(chunk.data);
-        } else if (chunk.type === 'end') {
-          console.log('\n\nSuccess!');
+        } else if (chunk.type === "end") {
+          console.log("\n\nSuccess!");
           return fullResponse;
-        } else if (chunk.type === 'error') {
+        } else if (chunk.type === "error") {
           throw new Error(chunk.data);
         }
       }
 
       return fullResponse;
-
     } catch (error: any) {
       attempt++;
 
-      if (error.name === 'AbortError') {
-        console.log('Stream cancelled');
+      if (error.name === "AbortError") {
+        console.log("Stream cancelled");
         throw error;
       }
 
       if (attempt < maxRetries) {
         const delay = Math.pow(2, attempt) * 1000;
-        console.log(`\nRetrying in ${delay}ms... (attempt ${attempt}/${maxRetries})`);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        console.log(
+          `\nRetrying in ${delay}ms... (attempt ${attempt}/${maxRetries})`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
       } else {
-        console.error('All retry attempts failed');
+        console.error("All retry attempts failed");
         throw error;
       }
     }
   }
 
-  throw new Error('Stream failed after all retries');
+  throw new Error("Stream failed after all retries");
 }
 ```
 
@@ -1119,28 +1123,26 @@ async function robustStream(
 async function queryWithFallback(question: string): Promise<string> {
   try {
     // Try streaming first
-    console.log('Attempting streaming...');
+    console.log("Attempting streaming...");
     const stream = await trainly.queryStream({ question });
 
-    let response = '';
+    let response = "";
     for await (const chunk of stream) {
-      if (chunk.type === 'content') {
+      if (chunk.type === "content") {
         response += chunk.data;
       }
     }
 
     return response;
-
   } catch (streamError) {
-    console.log('Streaming failed, falling back to standard query...');
+    console.log("Streaming failed, falling back to standard query...");
 
     try {
       // Fallback to standard query
       const response = await trainly.query({ question });
       return response.answer;
-
     } catch (queryError) {
-      console.error('Both streaming and standard query failed');
+      console.error("Both streaming and standard query failed");
       throw queryError;
     }
   }
@@ -1172,6 +1174,7 @@ async function queryWithFallback(question: string): Promise<string> {
       }
     }
     ```
+
   </Accordion>
 
   <Accordion title="Provide Feedback">
@@ -1185,6 +1188,7 @@ async function queryWithFallback(question: string): Promise<string> {
       </div>
     )}
     ```
+
   </Accordion>
 
   <Accordion title="Enable Cancellation">
@@ -1198,6 +1202,7 @@ async function queryWithFallback(question: string): Promise<string> {
       Cancel
     </button>
     ```
+
   </Accordion>
 
   <Accordion title="Buffer Management">
@@ -1217,6 +1222,7 @@ async function queryWithFallback(question: string): Promise<string> {
       }
     }
     ```
+
   </Accordion>
 </AccordionGroup>
 
@@ -1225,22 +1231,22 @@ async function queryWithFallback(question: string): Promise<string> {
 ### Unit Tests
 
 ```typescript
-import { describe, it, expect, vi } from 'vitest';
-import { TrainlyClient } from '@trainly/sdk';
+import { describe, it, expect, vi } from "vitest";
+import { TrainlyClient } from "@react/trainly";
 
-describe('Streaming', () => {
-  it('should stream response chunks', async () => {
+describe("Streaming", () => {
+  it("should stream response chunks", async () => {
     const trainly = new TrainlyClient({
-      apiKey: 'tk_test',
-      chatId: 'chat_test'
+      apiKey: "tk_test",
+      chatId: "chat_test",
     });
 
     // Mock streaming response
     const mockChunks = [
-      { type: 'context', data: [] },
-      { type: 'content', data: 'Hello' },
-      { type: 'content', data: ' world' },
-      { type: 'end' }
+      { type: "context", data: [] },
+      { type: "content", data: "Hello" },
+      { type: "content", data: " world" },
+      { type: "end" },
     ];
 
     global.fetch = vi.fn().mockResolvedValue({
@@ -1254,16 +1260,16 @@ describe('Streaming', () => {
             return {
               done: false,
               value: new TextEncoder().encode(
-                `data: ${JSON.stringify(chunk)}\n\n`
-              )
+                `data: ${JSON.stringify(chunk)}\n\n`,
+              ),
             };
-          }
-        })
-      }
+          },
+        }),
+      },
     });
 
     const stream = await trainly.queryStream({
-      question: 'Test'
+      question: "Test",
     });
 
     const chunks = [];
@@ -1272,9 +1278,9 @@ describe('Streaming', () => {
     }
 
     expect(chunks).toHaveLength(4);
-    expect(chunks[0].type).toBe('context');
-    expect(chunks[1].type).toBe('content');
-    expect(chunks[3].type).toBe('end');
+    expect(chunks[0].type).toBe("context");
+    expect(chunks[1].type).toBe("content");
+    expect(chunks[3].type).toBe("end");
   });
 });
 ```
@@ -1283,13 +1289,13 @@ describe('Streaming', () => {
 
 ### Target Streaming Metrics
 
-| Metric | Target | Notes |
-|--------|--------|-------|
-| Time to First Byte | < 500ms | First chunk arrives quickly |
-| Chunk Frequency | 10-20 chunks/sec | Smooth streaming |
-| Total Stream Time | < 10s | Complete response time |
-| Error Rate | < 0.1% | Very rare failures |
-| Cancellation Success | 100% | Always cancellable |
+| Metric               | Target           | Notes                       |
+| -------------------- | ---------------- | --------------------------- |
+| Time to First Byte   | < 500ms          | First chunk arrives quickly |
+| Chunk Frequency      | 10-20 chunks/sec | Smooth streaming            |
+| Total Stream Time    | < 10s            | Complete response time      |
+| Error Rate           | < 0.1%           | Very rare failures          |
+| Cancellation Success | 100%             | Always cancellable          |
 
 ## Next Steps
 
@@ -1307,4 +1313,3 @@ describe('Streaming', () => {
     Production best practices
   </Card>
 </CardGroup>
-

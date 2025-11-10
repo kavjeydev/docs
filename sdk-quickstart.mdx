@@ -24,9 +24,7 @@ Before you begin, make sure you have:
   <Step title="Trainly Account">
     Sign up at [trainly.com](https://trainly.com) if you haven't already
   </Step>
-  <Step title="Create a Chat">
-    Create a new chat and upload some documents
-  </Step>
+  <Step title="Create a Chat">Create a new chat and upload some documents</Step>
   <Step title="Enable API Access">
     Go to chat settings → Enable API access → Generate API key
   </Step>
@@ -42,42 +40,43 @@ Before you begin, make sure you have:
 <CodeGroup>
 
 ```bash npm
-npm install @trainly/sdk
+npm install @react/trainly
 ```
 
 ```bash yarn
-yarn add @trainly/sdk
+yarn add @react/trainly
 ```
 
 ```bash pnpm
-pnpm add @trainly/sdk
+pnpm add @react/trainly
 ```
 
 </CodeGroup>
 
 <Note>
-  The JavaScript SDK works in both Node.js and browser environments with automatic environment detection.
+  The JavaScript SDK works in both Node.js and browser environments with
+  automatic environment detection.
 </Note>
 
 ### Basic Usage
 
 ```javascript
-import { TrainlyClient } from '@trainly/sdk';
+import { TrainlyClient } from "@react/trainly";
 
 // Initialize the client
 const trainly = new TrainlyClient({
-  apiKey: 'tk_your_api_key_here',
-  chatId: 'chat_abc123'
+  apiKey: "tk_your_api_key_here",
+  chatId: "chat_abc123",
 });
 
 // Ask a question
 async function queryKnowledgeBase() {
   const response = await trainly.query({
-    question: 'What are the main findings?'
+    question: "What are the main findings?",
   });
 
-  console.log('Answer:', response.answer);
-  console.log('Citations:', response.context);
+  console.log("Answer:", response.answer);
+  console.log("Citations:", response.context);
 }
 
 queryKnowledgeBase();
@@ -88,18 +87,18 @@ queryKnowledgeBase();
 The SDK is written in TypeScript with full type definitions:
 
 ```typescript
-import { TrainlyClient, QueryResponse, UploadResponse } from '@trainly/sdk';
+import { TrainlyClient, QueryResponse, UploadResponse } from "@react/trainly";
 
 const trainly = new TrainlyClient({
   apiKey: process.env.TRAINLY_API_KEY!,
-  chatId: process.env.TRAINLY_CHAT_ID!
+  chatId: process.env.TRAINLY_CHAT_ID!,
 });
 
 // Fully typed response
 const response: QueryResponse = await trainly.query({
-  question: 'What is the methodology?',
-  model: 'gpt-4o-mini',
-  temperature: 0.7
+  question: "What is the methodology?",
+  model: "gpt-4o-mini",
+  temperature: 0.7,
 });
 
 // TypeScript knows all available fields
@@ -187,14 +186,14 @@ TRAINLY_CHAT_ID=chat_abc123
 ```
 
 ```javascript JavaScript
-import { TrainlyClient } from '@trainly/sdk';
-import dotenv from 'dotenv';
+import { TrainlyClient } from "@react/trainly";
+import dotenv from "dotenv";
 
 dotenv.config();
 
 const trainly = new TrainlyClient({
   apiKey: process.env.TRAINLY_API_KEY,
-  chatId: process.env.TRAINLY_CHAT_ID
+  chatId: process.env.TRAINLY_CHAT_ID,
 });
 ```
 
@@ -219,15 +218,15 @@ trainly = TrainlyClient(
 ```javascript JavaScript
 // Upload a file
 const uploadResult = await trainly.uploadFile({
-  file: './research_paper.pdf',
+  file: "./research_paper.pdf",
   scopeValues: {
-    project_id: 'proj_123',
-    category: 'research'
-  }
+    project_id: "proj_123",
+    category: "research",
+  },
 });
 
-console.log('Uploaded:', uploadResult.filename);
-console.log('File ID:', uploadResult.file_id);
+console.log("Uploaded:", uploadResult.filename);
+console.log("File ID:", uploadResult.file_id);
 ```
 
 ```python Python
@@ -254,12 +253,12 @@ print(f"File ID: {upload_result.file_id}")
 ```javascript JavaScript
 // Stream responses in real-time
 for await (const chunk of trainly.queryStream({
-  question: 'Explain the methodology in detail'
+  question: "Explain the methodology in detail",
 })) {
-  if (chunk.type === 'content') {
+  if (chunk.type === "content") {
     process.stdout.write(chunk.data);
-  } else if (chunk.type === 'end') {
-    console.log('\n\nStream complete!');
+  } else if (chunk.type === "end") {
+    console.log("\n\nStream complete!");
   }
 }
 ```
@@ -288,7 +287,7 @@ const files = await trainly.listFiles();
 console.log(`Total files: ${files.total_files}`);
 console.log(`Total size: ${formatBytes(files.total_size_bytes)}`);
 
-files.files.forEach(file => {
+files.files.forEach((file) => {
   console.log(`- ${file.filename} (${file.chunk_count} chunks)`);
 });
 ```
@@ -313,7 +312,7 @@ for file in files.files:
 ```javascript JavaScript
 // Delete a specific file
 const deleteResult = await trainly.deleteFile(
-  'v1_user_xyz_document.pdf_1609459200'
+  "v1_user_xyz_document.pdf_1609459200",
 );
 
 console.log(`Deleted ${deleteResult.filename}`);
@@ -339,7 +338,7 @@ For user-facing applications with OAuth:
 <CodeGroup>
 
 ```javascript JavaScript
-import { TrainlyV1Client } from '@trainly/sdk';
+import { TrainlyV1Client } from "@react/trainly";
 
 // User authenticates with their OAuth provider
 const userToken = await getUserOAuthToken(); // Your OAuth implementation
@@ -347,14 +346,12 @@ const userToken = await getUserOAuthToken(); // Your OAuth implementation
 // Initialize V1 client with user's token
 const trainly = new TrainlyV1Client({
   userToken: userToken,
-  appId: 'app_your_app_id'
+  appId: "app_your_app_id",
 });
 
 // Query user's private data
 const response = await trainly.query({
-  messages: [
-    { role: 'user', content: 'What is in my documents?' }
-  ]
+  messages: [{ role: "user", content: "What is in my documents?" }],
 });
 
 console.log(response.answer);
@@ -393,20 +390,19 @@ Always wrap API calls in try-catch blocks:
 ```javascript JavaScript
 try {
   const response = await trainly.query({
-    question: 'What is the conclusion?'
+    question: "What is the conclusion?",
   });
 
   console.log(response.answer);
-
 } catch (error) {
   if (error.status === 429) {
-    console.error('Rate limit exceeded. Please wait and retry.');
+    console.error("Rate limit exceeded. Please wait and retry.");
   } else if (error.status === 401) {
-    console.error('Invalid API key');
+    console.error("Invalid API key");
   } else if (error.status === 400) {
-    console.error('Bad request:', error.message);
+    console.error("Bad request:", error.message);
   } else {
-    console.error('Error:', error.message);
+    console.error("Error:", error.message);
   }
 }
 ```
@@ -444,19 +440,19 @@ Both SDKs support extensive configuration:
 
 ```javascript JavaScript
 const trainly = new TrainlyClient({
-  apiKey: 'tk_your_api_key',
-  chatId: 'chat_abc123',
+  apiKey: "tk_your_api_key",
+  chatId: "chat_abc123",
 
   // Optional configurations
-  baseUrl: 'https://api.trainly.com',
+  baseUrl: "https://api.trainly.com",
   timeout: 30000, // 30 seconds
   maxRetries: 3,
   retryDelay: 1000, // 1 second
 
   // Default query options
-  defaultModel: 'gpt-4o-mini',
+  defaultModel: "gpt-4o-mini",
   defaultTemperature: 0.7,
-  defaultMaxTokens: 1000
+  defaultMaxTokens: 1000,
 });
 ```
 
@@ -515,6 +511,7 @@ trainly = TrainlyClient(
     - Ensure documents are uploaded and processed
     - Check that published settings include the right context files
     - Verify your question is relevant to the uploaded documents
+
   </Accordion>
 
   <Accordion title="Support Channels">
@@ -527,22 +524,22 @@ trainly = TrainlyClient(
 
 ## SDK Features Comparison
 
-| Feature | JavaScript | Python | REST API |
-|---------|-----------|--------|----------|
-| Query Documents | ✅ | ✅ | ✅ |
-| Streaming Responses | ✅ | ✅ | ✅ |
-| File Upload | ✅ | ✅ | ✅ |
-| File Management | ✅ | ✅ | ✅ |
-| V1 OAuth Auth | ✅ | ✅ | ✅ |
-| Scope Filtering | ✅ | ✅ | ✅ |
-| TypeScript Types | ✅ | N/A | N/A |
-| Type Hints | N/A | ✅ | N/A |
-| Async/Await | ✅ | ✅ | N/A |
-| Browser Support | ✅ | ❌ | ✅ |
-| Retry Logic | ✅ | ✅ | ❌ |
-| Rate Limiting | ✅ | ✅ | ❌ |
+| Feature             | JavaScript | Python | REST API |
+| ------------------- | ---------- | ------ | -------- |
+| Query Documents     | ✅         | ✅     | ✅       |
+| Streaming Responses | ✅         | ✅     | ✅       |
+| File Upload         | ✅         | ✅     | ✅       |
+| File Management     | ✅         | ✅     | ✅       |
+| V1 OAuth Auth       | ✅         | ✅     | ✅       |
+| Scope Filtering     | ✅         | ✅     | ✅       |
+| TypeScript Types    | ✅         | N/A    | N/A      |
+| Type Hints          | N/A        | ✅     | N/A      |
+| Async/Await         | ✅         | ✅     | N/A      |
+| Browser Support     | ✅         | ❌     | ✅       |
+| Retry Logic         | ✅         | ✅     | ❌       |
+| Rate Limiting       | ✅         | ✅     | ❌       |
 
 <Tip>
-  Both SDKs provide the same core functionality with idiomatic APIs for their respective languages.
+  Both SDKs provide the same core functionality with idiomatic APIs for their
+  respective languages.
 </Tip>
-
