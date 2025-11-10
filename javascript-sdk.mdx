@@ -10,15 +10,15 @@ Install the Trainly SDK using your preferred package manager:
 <CodeGroup>
 
 ```bash npm
-npm install @react/trainly
+npm install @trainly/react
 ```
 
 ```bash yarn
-yarn add @react/trainly
+yarn add @trainly/react
 ```
 
 ```bash pnpm
-pnpm add @react/trainly
+pnpm add @trainly/react
 ```
 
 </CodeGroup>
@@ -26,7 +26,7 @@ pnpm add @react/trainly
 ## Quick Start
 
 ```javascript
-import { TrainlyClient } from "@react/trainly";
+import { TrainlyClient } from "@trainly/react";
 
 const trainly = new TrainlyClient({
   apiKey: "tk_your_api_key",
@@ -45,7 +45,7 @@ console.log(response.answer);
 ### Basic Configuration
 
 ```typescript
-import { TrainlyClient } from "@react/trainly";
+import { TrainlyClient } from "@trainly/react";
 
 const trainly = new TrainlyClient({
   apiKey: process.env.TRAINLY_API_KEY,
@@ -127,7 +127,7 @@ const response = await trainly.query({
 ### TypeScript Types
 
 ```typescript
-import type { QueryOptions, QueryResponse, ChunkScore } from "@react/trainly";
+import type { QueryOptions, QueryResponse, ChunkScore } from "@trainly/react";
 
 const options: QueryOptions = {
   question: "What are the results?",
@@ -167,7 +167,7 @@ for await (const chunk of stream) {
 
 ```tsx
 import { useState, useEffect } from "react";
-import { TrainlyClient } from "@react/trainly";
+import { TrainlyClient } from "@trainly/react";
 
 function StreamingChat() {
   const [answer, setAnswer] = useState("");
@@ -231,7 +231,7 @@ function StreamingChat() {
 ### Node.js Streaming Example
 
 ```typescript
-import { TrainlyClient } from "@react/trainly";
+import { TrainlyClient } from "@trainly/react";
 import { createInterface } from "readline";
 
 const trainly = new TrainlyClient({
@@ -406,7 +406,7 @@ for (const fileId of fileIds) {
 ### Setup V1 Client
 
 ```typescript
-import { TrainlyV1Client } from "@react/trainly";
+import { TrainlyV1Client } from "@trainly/react";
 
 // User authenticates with your OAuth provider (Clerk, Auth0, etc.)
 const userOAuthToken = await getOAuthToken(); // Your implementation
@@ -474,7 +474,7 @@ import {
   RateLimitError,
   AuthenticationError,
   ValidationError,
-} from "@react/trainly";
+} from "@trainly/react";
 
 try {
   const response = await trainly.query({
@@ -638,7 +638,7 @@ const trainly = new TrainlyClient({
 ### Rate Limiting
 
 ```typescript
-import { RateLimiter } from "@react/trainly";
+import { RateLimiter } from "@trainly/react";
 
 // Create rate limiter (60 requests per minute)
 const limiter = new RateLimiter({
@@ -692,7 +692,7 @@ async function cachedQuery(question: string): Promise<QueryResponse> {
 
 ```typescript
 // app/api/query/route.ts
-import { TrainlyClient } from "@react/trainly";
+import { TrainlyClient } from "@trainly/react";
 import { NextRequest, NextResponse } from "next/server";
 
 const trainly = new TrainlyClient({
@@ -721,7 +721,7 @@ export async function POST(request: NextRequest) {
 ```typescript
 // pages/api/query.ts
 import type { NextApiRequest, NextApiResponse } from "next";
-import { TrainlyClient } from "@react/trainly";
+import { TrainlyClient } from "@trainly/react";
 
 const trainly = new TrainlyClient({
   apiKey: process.env.TRAINLY_API_KEY!,
@@ -754,7 +754,7 @@ export default async function handler(
 
 ```typescript
 import express from "express";
-import { TrainlyClient } from "@react/trainly";
+import { TrainlyClient } from "@trainly/react";
 
 const app = express();
 app.use(express.json());
@@ -791,7 +791,7 @@ app.listen(3000, () => {
   <head>
     <title>Trainly Chat</title>
     <script type="module">
-      import { TrainlyClient } from "https://cdn.jsdelivr.net/npm/@react/trainly/dist/index.mjs";
+      import { TrainlyClient } from "https://cdn.jsdelivr.net/npm/@trainly/react/dist/index.mjs";
 
       const trainly = new TrainlyClient({
         apiKey: "tk_your_api_key",

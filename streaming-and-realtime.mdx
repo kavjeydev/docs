@@ -34,7 +34,7 @@ Trainly supports Server-Sent Events (SSE) for streaming AI responses in real-tim
 ### JavaScript/TypeScript
 
 ```typescript
-import { TrainlyClient } from "@react/trainly";
+import { TrainlyClient } from "@trainly/react";
 
 const trainly = new TrainlyClient({
   apiKey: process.env.TRAINLY_API_KEY!,
@@ -121,7 +121,7 @@ data: {"type": "end"}
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { TrainlyClient } from "@react/trainly";
+import { TrainlyClient } from "@trainly/react";
 import ReactMarkdown from "react-markdown";
 
 interface Message {
@@ -513,7 +513,7 @@ answers = asyncio.run(process_multiple_streams(questions))
 
 ```typescript
 // app/api/stream/route.ts
-import { TrainlyClient } from "@react/trainly";
+import { TrainlyClient } from "@trainly/react";
 
 const trainly = new TrainlyClient({
   apiKey: process.env.TRAINLY_API_KEY!,
@@ -564,7 +564,7 @@ export async function POST(request: Request) {
 ```typescript
 // hooks/useTrainlyStream.ts
 import { useState, useCallback, useRef } from 'react';
-import { TrainlyClient } from '@react/trainly';
+import { TrainlyClient } from '@trainly/react';
 
 interface UseStreamOptions {
   onComplete?: (answer: string) => void;
@@ -687,7 +687,7 @@ function ChatComponent() {
 
 <script setup lang="ts">
 import { ref } from "vue";
-import { TrainlyClient } from "@react/trainly";
+import { TrainlyClient } from "@trainly/react";
 import { marked } from "marked";
 
 const trainly = new TrainlyClient({
@@ -766,7 +766,7 @@ function renderMarkdown(content: string) {
 
 ```javascript
 const express = require("express");
-const { TrainlyClient } = require("@react/trainly");
+const { TrainlyClient } = require("@trainly/react");
 
 const app = express();
 const trainly = new TrainlyClient({
@@ -862,7 +862,7 @@ async def stream_query(question: str):
 ```typescript
 // Collaborative document Q&A
 import { io, Socket } from "socket.io-client";
-import { TrainlyClient } from "@react/trainly";
+import { TrainlyClient } from "@trainly/react";
 
 class CollaborativeChat {
   private socket: Socket;
@@ -1232,7 +1232,7 @@ async function queryWithFallback(question: string): Promise<string> {
 
 ```typescript
 import { describe, it, expect, vi } from "vitest";
-import { TrainlyClient } from "@react/trainly";
+import { TrainlyClient } from "@trainly/react";
 
 describe("Streaming", () => {
   it("should stream response chunks", async () => {

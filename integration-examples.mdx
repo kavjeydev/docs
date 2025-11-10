@@ -266,7 +266,7 @@ export function FileUploader({ chatId }: FileUploaderProps) {
 
 ```typescript
 // app/api/query/route.ts
-import { TrainlyClient } from "@react/trainly";
+import { TrainlyClient } from "@trainly/react";
 import { NextRequest, NextResponse } from "next/server";
 
 const trainly = new TrainlyClient({
@@ -299,7 +299,7 @@ export async function POST(request: NextRequest) {
 
 ```typescript
 // app/api/upload/route.ts
-import { TrainlyClient } from "@react/trainly";
+import { TrainlyClient } from "@trainly/react";
 import { NextRequest, NextResponse } from "next/server";
 
 const trainly = new TrainlyClient({
@@ -434,7 +434,7 @@ if __name__ == "__main__":
 
 ```typescript
 // lib/trainly-tenant.ts
-import { TrainlyClient } from "@react/trainly";
+import { TrainlyClient } from "@trainly/react";
 
 interface TenantConfig {
   tenantId: string;
@@ -833,7 +833,7 @@ if __name__ == "__main__":
 
 ```typescript
 // lib/product-search.ts
-import { TrainlyClient } from "@react/trainly";
+import { TrainlyClient } from "@trainly/react";
 
 interface Product {
   id: string;
@@ -1063,7 +1063,7 @@ if __name__ == "__main__":
 
 ```typescript
 // lib/legal-analyzer.ts
-import { TrainlyClient, QueryResponse } from "@react/trainly";
+import { TrainlyClient, QueryResponse } from "@trainly/react";
 
 interface ContractMetadata {
   contractId: string;
@@ -1386,7 +1386,7 @@ if __name__ == "__main__":
 ```javascript
 // discord-bot.js
 const { Client, GatewayIntentBits } = require("discord.js");
-const { TrainlyClient } = require("@react/trainly");
+const { TrainlyClient } = require("@trainly/react");
 
 const client = new Client({
   intents: [
@@ -1493,7 +1493,7 @@ client.login(process.env.DISCORD_BOT_TOKEN);
 ```typescript
 // server.ts
 import express from "express";
-import { TrainlyClient } from "@react/trainly";
+import { TrainlyClient } from "@trainly/react";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import cors from "cors";

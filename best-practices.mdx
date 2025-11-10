@@ -39,7 +39,7 @@ This guide covers best practices for building production applications with Train
     ```typescript
     // ✅ GOOD - API route (Next.js)
     // app/api/query/route.ts
-    import { TrainlyClient } from '@react/trainly';
+    import { TrainlyClient } from '@trainly/react';
 
     const trainly = new TrainlyClient({
       apiKey: process.env.TRAINLY_API_KEY!, // Server-side only
@@ -413,7 +413,7 @@ import {
   AuthenticationError,
   ValidationError,
   NetworkError,
-} from "@react/trainly";
+} from "@trainly/react";
 
 async function robustQuery(question: string, maxRetries: number = 3) {
   let lastError: Error;
@@ -871,7 +871,7 @@ app.get("/health", async (req, res) => {
 
 ```typescript
 // server.ts
-import { TrainlyClient } from "@react/trainly";
+import { TrainlyClient } from "@trainly/react";
 
 const trainly = new TrainlyClient({
   apiKey: process.env.TRAINLY_API_KEY!,
@@ -935,7 +935,7 @@ app.use((req, res, next) => {
 
 ```typescript
 // trainly.test.ts
-import { TrainlyClient } from "@react/trainly";
+import { TrainlyClient } from "@trainly/react";
 import { describe, it, expect, vi } from "vitest";
 
 describe("TrainlyClient", () => {

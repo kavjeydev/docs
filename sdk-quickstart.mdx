@@ -40,15 +40,15 @@ Before you begin, make sure you have:
 <CodeGroup>
 
 ```bash npm
-npm install @react/trainly
+npm install @trainly/react
 ```
 
 ```bash yarn
-yarn add @react/trainly
+yarn add @trainly/react
 ```
 
 ```bash pnpm
-pnpm add @react/trainly
+pnpm add @trainly/react
 ```
 
 </CodeGroup>
@@ -61,7 +61,7 @@ pnpm add @react/trainly
 ### Basic Usage
 
 ```javascript
-import { TrainlyClient } from "@react/trainly";
+import { TrainlyClient } from "@trainly/react";
 
 // Initialize the client
 const trainly = new TrainlyClient({
@@ -87,7 +87,7 @@ queryKnowledgeBase();
 The SDK is written in TypeScript with full type definitions:
 
 ```typescript
-import { TrainlyClient, QueryResponse, UploadResponse } from "@react/trainly";
+import { TrainlyClient, QueryResponse, UploadResponse } from "@trainly/react";
 
 const trainly = new TrainlyClient({
   apiKey: process.env.TRAINLY_API_KEY!,
@@ -186,7 +186,7 @@ TRAINLY_CHAT_ID=chat_abc123
 ```
 
 ```javascript JavaScript
-import { TrainlyClient } from "@react/trainly";
+import { TrainlyClient } from "@trainly/react";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -338,7 +338,7 @@ For user-facing applications with OAuth:
 <CodeGroup>
 
 ```javascript JavaScript
-import { TrainlyV1Client } from "@react/trainly";
+import { TrainlyV1Client } from "@trainly/react";
 
 // User authenticates with their OAuth provider
 const userToken = await getUserOAuthToken(); // Your OAuth implementation
