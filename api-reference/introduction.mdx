@@ -52,7 +52,7 @@ For external applications that want to integrate with Trainly while maintaining 
 # Your app gets an ID token from the OAuth provider
 # Send that token to Trainly for validation
 
-curl -X POST https://api.trainly.com/v1/me/chats/query \
+curl -X POST https://api.trainlyai.com/v1/me/chats/query \
   -H "Authorization: Bearer <USER_OAUTH_ID_TOKEN>" \
   -H "X-App-ID: app_your_app_id" \
   -H "Content-Type: application/json" \
@@ -69,7 +69,7 @@ curl -X POST https://api.trainly.com/v1/me/chats/query \
 For direct chat access with API keys:
 
 ```bash
-curl -X POST https://api.trainly.com/v1/{chat_id}/answer_question \
+curl -X POST https://api.trainlyai.com/v1/{chat_id}/answer_question \
   -H "Authorization: Bearer tk_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{"question": "What are the main findings?"}'
@@ -91,7 +91,7 @@ For applications requiring stricter privacy controls:
 <CodeGroup>
 
 ```bash Production
-https://api.trainly.com
+https://api.trainlyai.com
 ```
 
 ```bash Development
@@ -185,7 +185,7 @@ Trainly is built with privacy at its core:
 
 ## Getting Started
 
-1. **Create an account** at [trainly.com](https://trainly.com)
+1. **Create an account** at [trainlyai.com](https://trainlyai.com)
 2. **Create a chat** and upload some documents
 3. **Enable API access** in chat settings
 4. **Generate an API key** or register your OAuth app
@@ -199,7 +199,7 @@ Trainly is built with privacy at its core:
 
 Need help? We're here for you:
 
-- 📧 Email: support@trainly.com
+- 📧 Email: support@trainlyai.com
 - 💬 Discord: [Join our community](https://discord.gg/trainly)
-- 📚 Documentation: [docs.trainly.com](https://docs.trainly.com)
+- 📚 Documentation: [docs.trainlyai.com](https://docs.trainlyai.com)
 - 🐛 Bug Reports: [GitHub Issues](https://github.com/trainly/issues)

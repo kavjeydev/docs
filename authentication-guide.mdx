@@ -49,7 +49,7 @@ API keys provide simple authentication for server-to-server communication or tru
 <CodeGroup>
 
 ```bash cURL
-curl -X POST https://api.trainly.com/v1/chat_abc123/answer_question \
+curl -X POST https://api.trainlyai.com/v1/chat_abc123/answer_question \
   -H "Authorization: Bearer tk_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{"question": "What are the findings?"}'
@@ -149,7 +149,7 @@ If using Convex-based apps (automatic):
 Manual registration (optional):
 
 ```bash
-curl -X POST https://api.trainly.com/v1/console/apps/register \
+curl -X POST https://api.trainlyai.com/v1/console/apps/register \
   -H "X-Admin-Token: your_admin_token" \
   -d "app_name=My Application" \
   -d "issuer=DYNAMIC" \
@@ -197,7 +197,7 @@ curl -X POST https://api.trainly.com/v1/console/apps/register \
 
         // Call Trainly with user's token
         const response = await fetch(
-          'https://api.trainly.com/v1/me/chats/query',
+          'https://api.trainlyai.com/v1/me/chats/query',
           {
             method: 'POST',
             headers: {
@@ -244,7 +244,7 @@ curl -X POST https://api.trainly.com/v1/console/apps/register \
         const token = await getAccessTokenSilently();
 
         const response = await fetch(
-          'https://api.trainly.com/v1/me/chats/query',
+          'https://api.trainlyai.com/v1/me/chats/query',
           {
             method: 'POST',
             headers: {
@@ -294,7 +294,7 @@ curl -X POST https://api.trainly.com/v1/console/apps/register \
       const token = await user.getIdToken();
 
       const response = await fetch(
-        'https://api.trainly.com/v1/me/chats/query',
+        'https://api.trainlyai.com/v1/me/chats/query',
         {
           method: 'POST',
           headers: {
@@ -321,7 +321,7 @@ curl -X POST https://api.trainly.com/v1/console/apps/register \
 ```typescript
 // Query user's private data
 async function queryUserData(userToken: string, question: string) {
-  const response = await fetch("https://api.trainly.com/v1/me/chats/query", {
+  const response = await fetch("https://api.trainlyai.com/v1/me/chats/query", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${userToken}`, // User's OAuth token
@@ -384,7 +384,7 @@ export function useTrainlyV1() {
     const token = await getToken();
 
     const response = await fetch(
-      'https://api.trainly.com/v1/me/chats/query',
+      'https://api.trainlyai.com/v1/me/chats/query',
       {
         method: 'POST',
         headers: {
@@ -414,7 +414,7 @@ export function useTrainlyV1() {
     formData.append('scope_values', JSON.stringify(scopeValues || {}));
 
     const response = await fetch(
-      'https://api.trainly.com/v1/me/chats/files/upload',
+      'https://api.trainlyai.com/v1/me/chats/files/upload',
       {
         method: 'POST',
         headers: {
@@ -432,7 +432,7 @@ export function useTrainlyV1() {
     const token = await getToken();
 
     const response = await fetch(
-      'https://api.trainly.com/v1/me/chats/files',
+      'https://api.trainlyai.com/v1/me/chats/files',
       {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -486,7 +486,7 @@ function DocumentChat() {
 // Step 1: Get authorization URL
 async function startOAuthFlow(userId: string) {
   const response = await fetch(
-    'https://api.trainly.com/v1/oauth/authorize',
+    'https://api.trainlyai.com/v1/oauth/authorize',
     {
       method: 'POST',
       headers: {
@@ -510,7 +510,7 @@ async function startOAuthFlow(userId: string) {
 // Step 2: Handle callback
 async function handleOAuthCallback(code: string) {
   const response = await fetch(
-    'https://api.trainly.com/v1/oauth/token',
+    'https://api.trainlyai.com/v1/oauth/token',
     {
       method: 'POST',
       headers: {
@@ -537,7 +537,7 @@ async function queryWithUserToken(question: string) {
   const userToken = localStorage.getItem('trainly_user_token');
 
   const response = await fetch(
-    'https://api.trainly.com/v1/privacy/query',
+    'https://api.trainlyai.com/v1/privacy/query',
     {
       method: 'POST',
       headers: {
@@ -565,7 +565,7 @@ For backend services that need to provision users or manage resources:
 // Provision a new user
 async function provisionUser(endUserId: string, capabilities: string[]) {
   const response = await fetch(
-    'https://api.trainly.com/v1/privacy/apps/users/provision',
+    'https://api.trainlyai.com/v1/privacy/apps/users/provision',
     {
       method: 'POST',
       headers: {
@@ -829,7 +829,7 @@ const tokenService = new TokenRotationService(async () => {
 async function queryWithRotation(question: string) {
   const token = await tokenService.getValidToken();
 
-  return await fetch("https://api.trainly.com/v1/me/chats/query", {
+  return await fetch("https://api.trainlyai.com/v1/me/chats/query", {
     headers: {
       Authorization: `Bearer ${token}`,
       "X-App-ID": appId,
@@ -911,7 +911,7 @@ export async function POST(request: NextRequest) {
   const { question } = await request.json();
 
   // Call Trainly V1 API with user's token
-  const response = await fetch("https://api.trainly.com/v1/me/chats/query", {
+  const response = await fetch("https://api.trainlyai.com/v1/me/chats/query", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,

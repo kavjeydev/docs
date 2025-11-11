@@ -1,6 +1,6 @@
 ---
-title: 'Delete & Cleanup Examples'
-description: 'Remove files, documents, and manage chat data lifecycle'
+title: "Delete & Cleanup Examples"
+description: "Remove files, documents, and manage chat data lifecycle"
 ---
 
 ## Delete User File
@@ -14,7 +14,7 @@ DELETE /v1/me/chats/files/{file_id}
 ### Delete Example
 
 ```bash
-curl -X DELETE https://api.trainly.com/v1/me/chats/files/v1_user_xyz_document.pdf_1609459200 \
+curl -X DELETE https://api.trainlyai.com/v1/me/chats/files/v1_user_xyz_document.pdf_1609459200 \
   -H "Authorization: Bearer <USER_OAUTH_ID_TOKEN>" \
   -H "X-App-ID: app_your_app_id"
 ```
@@ -43,7 +43,7 @@ DELETE /remove_context/{file_id}
 ### Remove Context Example
 
 ```bash
-curl -X DELETE https://api.trainly.com/remove_context/doc_abc123 \
+curl -X DELETE https://api.trainlyai.com/remove_context/doc_abc123 \
   -H "Authorization: Bearer your_api_key"
 ```
 
@@ -58,7 +58,8 @@ curl -X DELETE https://api.trainly.com/remove_context/doc_abc123 \
 ```
 
 <Warning>
-  This action is permanent and cannot be undone. All embeddings and chunks will be deleted.
+  This action is permanent and cannot be undone. All embeddings and chunks will
+  be deleted.
 </Warning>
 
 ## Delete All Chat Data
@@ -72,7 +73,7 @@ DELETE /delete_chat_nodes/{chat_id}
 ### Delete Chat Nodes Example
 
 ```bash
-curl -X DELETE https://api.trainly.com/delete_chat_nodes/chat_abc123 \
+curl -X DELETE https://api.trainlyai.com/delete_chat_nodes/chat_abc123 \
   -H "Authorization: Bearer your_api_key"
 ```
 
@@ -98,7 +99,7 @@ POST /cleanup_chat_data/{chat_id}
 ### Cleanup with Subchats
 
 ```bash
-curl -X POST "https://api.trainly.com/cleanup_chat_data/chat_abc123?child_chat_ids=subchat1,subchat2" \
+curl -X POST "https://api.trainlyai.com/cleanup_chat_data/chat_abc123?child_chat_ids=subchat1,subchat2" \
   -H "Authorization: Bearer your_api_key"
 ```
 
@@ -131,7 +132,9 @@ curl -X POST "https://api.trainly.com/cleanup_chat_data/chat_abc123?child_chat_i
 ```javascript
 async function deleteFile(fileId, userToken, appId) {
   // Confirm with user first
-  const confirmed = confirm('Are you sure you want to delete this file? This cannot be undone.');
+  const confirmed = confirm(
+    "Are you sure you want to delete this file? This cannot be undone.",
+  );
 
   if (!confirmed) {
     return { cancelled: true };
@@ -139,14 +142,14 @@ async function deleteFile(fileId, userToken, appId) {
 
   try {
     const response = await fetch(
-      `https://api.trainly.com/v1/me/chats/files/${fileId}`,
+      `https://api.trainlyai.com/v1/me/chats/files/${fileId}`,
       {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
-          'Authorization': `Bearer ${userToken}`,
-          'X-App-ID': appId
-        }
-      }
+          Authorization: `Bearer ${userToken}`,
+          "X-App-ID": appId,
+        },
+      },
     );
 
     if (!response.ok) {
@@ -158,32 +161,32 @@ async function deleteFile(fileId, userToken, appId) {
     return {
       success: true,
       message: `File deleted successfully. Freed ${formatBytes(result.size_bytes_freed)}`,
-      data: result
+      data: result,
     };
   } catch (error) {
     return {
       success: false,
-      error: error.message
+      error: error.message,
     };
   }
 }
 
 function formatBytes(bytes) {
-  if (bytes === 0) return '0 Bytes';
+  if (bytes === 0) return "0 Bytes";
   const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const sizes = ["Bytes", "KB", "MB", "GB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
 }
 
 // Usage
-const result = await deleteFile('v1_user_xyz_doc_123', userToken, appId);
+const result = await deleteFile("v1_user_xyz_doc_123", userToken, appId);
 if (result.success) {
   console.log(result.message);
 } else if (result.cancelled) {
-  console.log('Deletion cancelled');
+  console.log("Deletion cancelled");
 } else {
-  console.error('Delete failed:', result.error);
+  console.error("Delete failed:", result.error);
 }
 ```
 
@@ -193,20 +196,20 @@ if (result.success) {
 async function bulkDeleteFiles(fileIds, userToken, appId) {
   const results = {
     successful: [],
-    failed: []
+    failed: [],
   };
 
   for (const fileId of fileIds) {
     try {
       const response = await fetch(
-        `https://api.trainly.com/v1/me/chats/files/${fileId}`,
+        `https://api.trainlyai.com/v1/me/chats/files/${fileId}`,
         {
-          method: 'DELETE',
+          method: "DELETE",
           headers: {
-            'Authorization': `Bearer ${userToken}`,
-            'X-App-ID': appId
-          }
-        }
+            Authorization: `Bearer ${userToken}`,
+            "X-App-ID": appId,
+          },
+        },
       );
 
       if (response.ok) {
@@ -214,30 +217,30 @@ async function bulkDeleteFiles(fileIds, userToken, appId) {
         results.successful.push({
           fileId,
           filename: data.filename,
-          spaceFree: data.size_bytes_freed
+          spaceFree: data.size_bytes_freed,
         });
       } else {
         results.failed.push({
           fileId,
-          error: `HTTP ${response.status}`
+          error: `HTTP ${response.status}`,
         });
       }
     } catch (error) {
       results.failed.push({
         fileId,
-        error: error.message
+        error: error.message,
       });
     }
 
     // Add small delay to avoid rate limiting
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
   }
 
   return results;
 }
 
 // Usage
-const fileIds = ['file1', 'file2', 'file3'];
+const fileIds = ["file1", "file2", "file3"];
 const results = await bulkDeleteFiles(fileIds, userToken, appId);
 console.log(`Deleted ${results.successful.length} files`);
 console.log(`Failed to delete ${results.failed.length} files`);
@@ -255,14 +258,14 @@ class FileManager {
 
   async deleteFile(fileId) {
     const response = await fetch(
-      `https://api.trainly.com/v1/me/chats/files/${fileId}`,
+      `https://api.trainlyai.com/v1/me/chats/files/${fileId}`,
       {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
-          'Authorization': `Bearer ${this.userToken}`,
-          'X-App-ID': this.appId
-        }
-      }
+          Authorization: `Bearer ${this.userToken}`,
+          "X-App-ID": this.appId,
+        },
+      },
     );
 
     if (!response.ok) {
@@ -275,15 +278,15 @@ class FileManager {
     this.deletedFiles.push({
       fileId,
       filename: result.filename,
-      deletedAt: Date.now()
+      deletedAt: Date.now(),
     });
 
     return result;
   }
 
   getRecentlyDeleted(withinMinutes = 5) {
-    const cutoff = Date.now() - (withinMinutes * 60 * 1000);
-    return this.deletedFiles.filter(f => f.deletedAt > cutoff);
+    const cutoff = Date.now() - withinMinutes * 60 * 1000;
+    return this.deletedFiles.filter((f) => f.deletedAt > cutoff);
   }
 
   clearDeleteHistory() {
@@ -293,16 +296,16 @@ class FileManager {
 
 // Usage
 const manager = new FileManager(userToken, appId);
-await manager.deleteFile('file_123');
+await manager.deleteFile("file_123");
 
 // Show recently deleted
-console.log('Recently deleted:', manager.getRecentlyDeleted());
+console.log("Recently deleted:", manager.getRecentlyDeleted());
 ```
 
 ## React Component Example
 
 ```jsx
-import { useState } from 'react';
+import { useState } from "react";
 
 function FileList({ files, userToken, appId, onFileDeleted }) {
   const [deleting, setDeleting] = useState(null);
@@ -316,18 +319,18 @@ function FileList({ files, userToken, appId, onFileDeleted }) {
 
     try {
       const response = await fetch(
-        `https://api.trainly.com/v1/me/chats/files/${fileId}`,
+        `https://api.trainlyai.com/v1/me/chats/files/${fileId}`,
         {
-          method: 'DELETE',
+          method: "DELETE",
           headers: {
-            'Authorization': `Bearer ${userToken}`,
-            'X-App-ID': appId
-          }
-        }
+            Authorization: `Bearer ${userToken}`,
+            "X-App-ID": appId,
+          },
+        },
       );
 
       if (!response.ok) {
-        throw new Error('Delete failed');
+        throw new Error("Delete failed");
       }
 
       const result = await response.json();
@@ -336,8 +339,9 @@ function FileList({ files, userToken, appId, onFileDeleted }) {
       onFileDeleted(fileId, result);
 
       // Show success message
-      alert(`File deleted successfully. Freed ${formatBytes(result.size_bytes_freed)}`);
-
+      alert(
+        `File deleted successfully. Freed ${formatBytes(result.size_bytes_freed)}`,
+      );
     } catch (error) {
       alert(`Failed to delete file: ${error.message}`);
     } finally {
@@ -347,14 +351,14 @@ function FileList({ files, userToken, appId, onFileDeleted }) {
 
   return (
     <div className="file-list">
-      {files.map(file => (
+      {files.map((file) => (
         <div key={file.file_id} className="file-item">
           <span>{file.filename}</span>
           <button
             onClick={() => handleDelete(file.file_id, file.filename)}
             disabled={deleting === file.file_id}
           >
-            {deleting === file.file_id ? 'Deleting...' : 'Delete'}
+            {deleting === file.file_id ? "Deleting..." : "Delete"}
           </button>
         </div>
       ))}
@@ -378,7 +382,7 @@ GET /debug_chat_data/{chat_id}
 ### Debug Example
 
 ```bash
-curl -X GET https://api.trainly.com/debug_chat_data/chat_abc123
+curl -X GET https://api.trainlyai.com/debug_chat_data/chat_abc123
 ```
 
 **Response:**
@@ -415,9 +419,7 @@ curl -X GET https://api.trainly.com/debug_chat_data/chat_abc123
   <Step title="Show Impact">
     Display what will be deleted (file size, chunk count)
   </Step>
-  <Step title="Log Deletions">
-    Keep audit logs of deletion events
-  </Step>
+  <Step title="Log Deletions">Keep audit logs of deletion events</Step>
   <Step title="Graceful Errors">
     Handle 404 errors (file already deleted) gracefully
   </Step>
@@ -435,15 +437,15 @@ try {
   await deleteFile(fileId);
 } catch (error) {
   if (error.status === 404) {
-    console.log('File already deleted or not found');
+    console.log("File already deleted or not found");
   } else if (error.status === 401) {
-    console.error('Unauthorized - check your credentials');
+    console.error("Unauthorized - check your credentials");
   } else if (error.status === 403) {
-    console.error('Forbidden - you don\'t have permission to delete this file');
+    console.error("Forbidden - you don't have permission to delete this file");
   } else if (error.status === 429) {
-    console.error('Rate limited - please wait before retrying');
+    console.error("Rate limited - please wait before retrying");
   } else {
-    console.error('Delete failed:', error.message);
+    console.error("Delete failed:", error.message);
   }
 }
 ```

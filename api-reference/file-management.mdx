@@ -1,6 +1,6 @@
 ---
-title: 'File Management'
-description: 'Upload, process, and manage documents with automatic embedding generation'
+title: "File Management"
+description: "Upload, process, and manage documents with automatic embedding generation"
 ---
 
 ## Overview
@@ -18,7 +18,7 @@ Trainly's File Management API handles document upload, processing, and lifecycle
 Upload and extract text from any supported file format:
 
 ```bash POST /extract-pdf-text
-curl -X POST https://api.trainly.com/extract-pdf-text \
+curl -X POST https://api.trainlyai.com/extract-pdf-text \
   -H "Content-Type: multipart/form-data" \
   -F "file=@document.pdf"
 ```
@@ -75,11 +75,10 @@ curl -X POST https://api.trainly.com/extract-pdf-text \
     - **XML** (.xml) - Structured data parsing
   </Accordion>
 
-  <Accordion title="Data Formats">
-    - **CSV** (.csv) - Comma-separated values
-    - **JSON** (.json) - Structured JSON data
-    - **YAML** (.yaml, .yml) - Configuration files
-  </Accordion>
+<Accordion title="Data Formats">
+  - **CSV** (.csv) - Comma-separated values - **JSON** (.json) - Structured JSON
+  data - **YAML** (.yaml, .yml) - Configuration files
+</Accordion>
 
   <Accordion title="Code Files">
     - **JavaScript** (.js) - Source code
@@ -101,7 +100,7 @@ curl -X POST https://api.trainly.com/extract-pdf-text \
 Process extracted text and create searchable embeddings:
 
 ```bash POST /create_nodes_and_embeddings
-curl -X POST https://api.trainly.com/create_nodes_and_embeddings \
+curl -X POST https://api.trainlyai.com/create_nodes_and_embeddings \
   -H "Content-Type: application/json" \
   -d '{
     "pdf_text": "Full document text here...",
@@ -151,7 +150,8 @@ curl -X POST https://api.trainly.com/create_nodes_and_embeddings \
 
 <Steps>
   <Step title="Text Chunking">
-    Document is split into 500-character chunks with overlap for context preservation
+    Document is split into 500-character chunks with overlap for context
+    preservation
   </Step>
   <Step title="Embedding Generation">
     Each chunk is converted to a vector embedding using `text-embedding-3-small`
@@ -160,7 +160,8 @@ curl -X POST https://api.trainly.com/create_nodes_and_embeddings \
     Chunks are stored as nodes in Neo4j with relationship edges
   </Step>
   <Step title="Semantic Analysis">
-    AI analyzes chunk relationships to create intelligent links (EXPLAINS, SUPPORTS, etc.)
+    AI analyzes chunk relationships to create intelligent links (EXPLAINS,
+    SUPPORTS, etc.)
   </Step>
   <Step title="Indexing">
     Vector embeddings are indexed for fast semantic search
@@ -174,7 +175,7 @@ curl -X POST https://api.trainly.com/create_nodes_and_embeddings \
 Delete a specific document and all its chunks:
 
 ```bash DELETE /remove_context/{file_id}
-curl -X DELETE https://api.trainly.com/remove_context/doc_abc123 \
+curl -X DELETE https://api.trainlyai.com/remove_context/doc_abc123 \
   -H "Authorization: Bearer your_api_key"
 ```
 
@@ -195,7 +196,8 @@ curl -X DELETE https://api.trainly.com/remove_context/doc_abc123 \
 ```
 
 <Warning>
-  This action is permanent and cannot be undone. All chunks and embeddings will be deleted.
+  This action is permanent and cannot be undone. All chunks and embeddings will
+  be deleted.
 </Warning>
 
 ## Chat Data Management
@@ -205,7 +207,7 @@ curl -X DELETE https://api.trainly.com/remove_context/doc_abc123 \
 Remove all documents and chunks associated with a chat:
 
 ```bash DELETE /delete_chat_nodes/{chat_id}
-curl -X DELETE https://api.trainly.com/delete_chat_nodes/chat_abc123 \
+curl -X DELETE https://api.trainlyai.com/delete_chat_nodes/chat_abc123 \
   -H "Authorization: Bearer your_api_key"
 ```
 
@@ -225,7 +227,7 @@ curl -X DELETE https://api.trainly.com/delete_chat_nodes/chat_abc123 \
 For advanced cleanup including subchats:
 
 ```bash POST /cleanup_chat_data/{chat_id}
-curl -X POST "https://api.trainly.com/cleanup_chat_data/chat_abc123?convex_id=chat_xyz&child_chat_ids=subchat1,subchat2" \
+curl -X POST "https://api.trainlyai.com/cleanup_chat_data/chat_abc123?convex_id=chat_xyz&child_chat_ids=subchat1,subchat2" \
   -H "Authorization: Bearer your_api_key"
 ```
 
@@ -263,7 +265,7 @@ curl -X POST "https://api.trainly.com/cleanup_chat_data/chat_abc123?convex_id=ch
 Inspect what data exists for a chat:
 
 ```bash GET /debug_chat_data/{chat_id}
-curl -X GET https://api.trainly.com/debug_chat_data/chat_abc123
+curl -X GET https://api.trainlyai.com/debug_chat_data/chat_abc123
 ```
 
 **Response**
@@ -351,6 +353,7 @@ Trainly creates intelligent relationships between chunks:
     - **ELABORATES**: One chunk adds details to another
     - **INTRODUCES**: One chunk introduces topics in another
     - **CONCLUDES**: One chunk concludes ideas from another
+
   </Accordion>
 
   <Accordion title="Sequential Relationships">
@@ -358,6 +361,7 @@ Trainly creates intelligent relationships between chunks:
 
     - **NEXT**: Sequential order in the original document
     - **HAS_CHUNK**: Document to chunk relationship
+
   </Accordion>
 </AccordionGroup>
 
@@ -420,19 +424,22 @@ async function uploadFile(file, maxRetries = 3) {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append("file", file);
 
-      const response = await fetch('https://api.trainly.com/extract-pdf-text', {
-        method: 'POST',
-        body: formData
-      });
+      const response = await fetch(
+        "https://api.trainlyai.com/extract-pdf-text",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
       if (response.status === 413) {
-        throw new Error('File too large (max 5MB)');
+        throw new Error("File too large (max 5MB)");
       }
 
       if (response.status === 415) {
-        throw new Error('Unsupported file type');
+        throw new Error("Unsupported file type");
       }
 
       if (!response.ok) {
@@ -440,13 +447,12 @@ async function uploadFile(file, maxRetries = 3) {
       }
 
       return await response.json();
-
     } catch (error) {
       if (attempt === maxRetries - 1) throw error;
 
       // Exponential backoff
       const delay = Math.pow(2, attempt) * 1000;
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
 }
@@ -492,4 +498,3 @@ Documents stored in Trainly include rich metadata:
 <ResponseField name="500 Internal Server Error" type="error">
   Error during text extraction or embedding generation
 </ResponseField>
-

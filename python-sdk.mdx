@@ -68,7 +68,7 @@ trainly = TrainlyClient(
     chat_id="chat_abc123",
 
     # API Configuration
-    base_url="https://api.trainly.com",
+    base_url="https://api.trainlyai.com",
     timeout=30.0,  # Request timeout in seconds
 
     # Retry Configuration
@@ -1360,6 +1360,7 @@ async def test_async_query():
         chat_id=os.getenv("TRAINLY_CHAT_ID")
     )
     ```
+
   </Accordion>
 
   <Accordion title="Connection Pooling">
@@ -1377,6 +1378,7 @@ async def test_async_query():
         trainly = TrainlyClient(api_key="...", chat_id="...")
         response = trainly.query(question=question)
     ```
+
   </Accordion>
 
   <Accordion title="Async for Performance">
@@ -1397,6 +1399,7 @@ async def test_async_query():
 
         return await asyncio.gather(*tasks)
     ```
+
   </Accordion>
 </AccordionGroup>
 
@@ -1412,6 +1415,7 @@ async def test_async_query():
     ```bash
     pip install trainly
     ```
+
   </Accordion>
 
   <Accordion title="Authentication Errors">
@@ -1423,6 +1427,7 @@ async def test_async_query():
     - Check API key starts with `tk_`
     - Verify API access is enabled in chat settings
     - Ensure chat has published settings
+
   </Accordion>
 
   <Accordion title="Empty Responses">
@@ -1434,6 +1439,7 @@ async def test_async_query():
     - Upload documents to the chat
     - Check published settings include context files
     - Verify scope filters aren't too restrictive
+
   </Accordion>
 
   <Accordion title="Rate Limit Errors">
@@ -1445,6 +1451,7 @@ async def test_async_query():
     - Implement exponential backoff
     - Use caching for common queries
     - Consider upgrading your plan
+
   </Accordion>
 </AccordionGroup>
 
@@ -1464,4 +1471,3 @@ async def test_async_query():
     Get help from our team
   </Card>
 </CardGroup>
-

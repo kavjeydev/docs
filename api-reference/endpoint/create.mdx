@@ -14,7 +14,7 @@ POST /v1/{chat_id}/answer_question
 ### Basic Example
 
 ```bash
-curl -X POST https://api.trainly.com/v1/chat_abc123/answer_question \
+curl -X POST https://api.trainlyai.com/v1/chat_abc123/answer_question \
   -H "Authorization: Bearer tk_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -25,7 +25,7 @@ curl -X POST https://api.trainly.com/v1/chat_abc123/answer_question \
 ### Advanced Query with Custom Settings
 
 ```bash
-curl -X POST https://api.trainly.com/v1/chat_abc123/answer_question \
+curl -X POST https://api.trainlyai.com/v1/chat_abc123/answer_question \
   -H "Authorization: Bearer tk_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -42,7 +42,7 @@ curl -X POST https://api.trainly.com/v1/chat_abc123/answer_question \
 Filter results to specific documents:
 
 ```bash
-curl -X POST https://api.trainly.com/v1/chat_abc123/answer_question \
+curl -X POST https://api.trainlyai.com/v1/chat_abc123/answer_question \
   -H "Authorization: Bearer tk_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -65,7 +65,7 @@ POST /v1/{chat_id}/answer_question_stream
 ### Streaming Example
 
 ```bash
-curl -X POST https://api.trainly.com/v1/chat_abc123/answer_question_stream \
+curl -X POST https://api.trainlyai.com/v1/chat_abc123/answer_question_stream \
   -H "Authorization: Bearer tk_your_api_key" \
   -H "Content-Type: application/json" \
   -H "Accept: text/event-stream" \
@@ -79,7 +79,7 @@ curl -X POST https://api.trainly.com/v1/chat_abc123/answer_question_stream \
 
 ```javascript
 const eventSource = new EventSource(
-  "https://api.trainly.com/v1/chat_abc123/answer_question_stream",
+  "https://api.trainlyai.com/v1/chat_abc123/answer_question_stream",
   {
     headers: {
       Authorization: "Bearer tk_your_api_key",
@@ -111,7 +111,7 @@ POST /v1/me/chats/query
 ### OAuth Example
 
 ```bash
-curl -X POST https://api.trainly.com/v1/me/chats/query \
+curl -X POST https://api.trainlyai.com/v1/me/chats/query \
   -H "Authorization: Bearer <USER_OAUTH_ID_TOKEN>" \
   -H "X-App-ID: app_your_app_id" \
   -H "Content-Type: application/x-www-form-urlencoded" \

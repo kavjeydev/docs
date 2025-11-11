@@ -640,7 +640,7 @@ try {
     notifyUser({
       type: "credit_limit",
       message: "Please purchase more credits to continue",
-      upgradeUrl: "https://trainly.com/billing",
+      upgradeUrl: "https://trainlyai.com/billing",
     });
   }
 }
@@ -671,7 +671,7 @@ except InsufficientCreditsError as e:
     notify_user(
         type="credit_limit",
         message="Please purchase more credits to continue",
-        upgrade_url="https://trainly.com/billing"
+        upgrade_url="https://trainlyai.com/billing"
     )
 ```
 
@@ -854,14 +854,14 @@ console.log("This month:", analytics.getTotalCredits(), "credits");
   <Card
     title="Upgrade Plan"
     icon="credit-card"
-    href="https://trainly.com/pricing"
+    href="https://trainlyai.com/pricing"
   >
     View pricing and upgrade options
   </Card>
   <Card
     title="Usage Dashboard"
     icon="chart-bar"
-    href="https://trainly.com/dashboard"
+    href="https://trainlyai.com/dashboard"
   >
     Monitor your credit usage
   </Card>

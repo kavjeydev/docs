@@ -1,6 +1,6 @@
 ---
-title: 'V1 Trusted Issuer Authentication'
-description: 'OAuth-based authentication for external applications with complete user data isolation'
+title: "V1 Trusted Issuer Authentication"
+description: "OAuth-based authentication for external applications with complete user data isolation"
 ---
 
 ## Overview
@@ -8,7 +8,8 @@ description: 'OAuth-based authentication for external applications with complete
 The V1 Trusted Issuer Authentication system allows external applications to integrate with Trainly while maintaining complete user privacy. Users authenticate with their own OAuth provider (Clerk, Auth0, Google, etc.), and your application forwards the ID token to Trainly for validation.
 
 <Info>
-  **Privacy First**: With V1 auth, user files are stored in permanent private subchats that only they can access. Developers never see raw files or tokens.
+  **Privacy First**: With V1 auth, user files are stored in permanent private
+  subchats that only they can access. Developers never see raw files or tokens.
 </Info>
 
 ## How It Works
@@ -32,7 +33,7 @@ sequenceDiagram
 Before using V1 authentication, register your app with Trainly:
 
 ```bash POST /v1/console/apps/register
-curl -X POST https://api.trainly.com/v1/console/apps/register \
+curl -X POST https://api.trainlyai.com/v1/console/apps/register \
   -H "X-Admin-Token: your_admin_token" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "app_name=My Application" \
@@ -87,7 +88,7 @@ curl -X POST https://api.trainly.com/v1/console/apps/register \
 ### Query User's Private Chat
 
 ```bash POST /v1/me/chats/query
-curl -X POST https://api.trainly.com/v1/me/chats/query \
+curl -X POST https://api.trainlyai.com/v1/me/chats/query \
   -H "Authorization: Bearer <USER_OAUTH_ID_TOKEN>" \
   -H "X-App-ID: app_your_app_id" \
   -H "Content-Type: application/x-www-form-urlencoded" \
@@ -160,7 +161,7 @@ curl -X POST https://api.trainly.com/v1/me/chats/query \
 Users can upload files directly to their permanent private subchat:
 
 ```bash POST /v1/me/chats/files/upload
-curl -X POST https://api.trainly.com/v1/me/chats/files/upload \
+curl -X POST https://api.trainlyai.com/v1/me/chats/files/upload \
   -H "Authorization: Bearer <USER_OAUTH_ID_TOKEN>" \
   -H "X-App-ID: app_your_app_id" \
   -F "file=@document.pdf" \
@@ -170,7 +171,7 @@ curl -X POST https://api.trainly.com/v1/me/chats/files/upload \
 **Alternative: Text Upload**
 
 ```bash
-curl -X POST https://api.trainly.com/v1/me/chats/files/upload \
+curl -X POST https://api.trainlyai.com/v1/me/chats/files/upload \
   -H "Authorization: Bearer <USER_OAUTH_ID_TOKEN>" \
   -H "X-App-ID: app_your_app_id" \
   -F "text_content=This is my document content..." \
@@ -232,7 +233,7 @@ curl -X POST https://api.trainly.com/v1/me/chats/files/upload \
 Upload multiple files at once:
 
 ```bash POST /v1/me/chats/files/upload-bulk
-curl -X POST https://api.trainly.com/v1/me/chats/files/upload-bulk \
+curl -X POST https://api.trainlyai.com/v1/me/chats/files/upload-bulk \
   -H "Authorization: Bearer <USER_OAUTH_ID_TOKEN>" \
   -H "X-App-ID: app_your_app_id" \
   -F "files=@document1.pdf" \
@@ -270,7 +271,7 @@ curl -X POST https://api.trainly.com/v1/me/chats/files/upload-bulk \
 ### List User's Files
 
 ```bash GET /v1/me/chats/files
-curl -X GET https://api.trainly.com/v1/me/chats/files \
+curl -X GET https://api.trainlyai.com/v1/me/chats/files \
   -H "Authorization: Bearer <USER_OAUTH_ID_TOKEN>" \
   -H "X-App-ID: app_your_app_id"
 ```
@@ -297,7 +298,7 @@ curl -X GET https://api.trainly.com/v1/me/chats/files \
 ### Delete User's File
 
 ```bash DELETE /v1/me/chats/files/{file_id}
-curl -X DELETE https://api.trainly.com/v1/me/chats/files/v1_user_xyz_document.pdf_1609459200 \
+curl -X DELETE https://api.trainlyai.com/v1/me/chats/files/v1_user_xyz_document.pdf_1609459200 \
   -H "Authorization: Bearer <USER_OAUTH_ID_TOKEN>" \
   -H "X-App-ID: app_your_app_id"
 ```
@@ -320,7 +321,7 @@ curl -X DELETE https://api.trainly.com/v1/me/chats/files/v1_user_xyz_document.pd
 ### Get User Profile
 
 ```bash GET /v1/me/profile
-curl -X GET https://api.trainly.com/v1/me/profile \
+curl -X GET https://api.trainlyai.com/v1/me/profile \
   -H "Authorization: Bearer <USER_OAUTH_ID_TOKEN>" \
   -H "X-App-ID: app_your_app_id"
 ```
@@ -373,7 +374,8 @@ Trainly works with any OAuth 2.0 / OpenID Connect provider:
 ## Security Best Practices
 
 <Warning>
-  **Never store user OAuth ID tokens on your servers**. They should only exist in the user's browser/device and be sent directly to Trainly's API.
+  **Never store user OAuth ID tokens on your servers**. They should only exist
+  in the user's browser/device and be sent directly to Trainly's API.
 </Warning>
 
 ### Token Flow Best Practices
@@ -386,27 +388,28 @@ Trainly works with any OAuth 2.0 / OpenID Connect provider:
 ### Example Implementation (React)
 
 ```jsx
-import { useAuth } from '@clerk/clerk-react';
+import { useAuth } from "@clerk/clerk-react";
 
 function QueryComponent() {
   const { getToken } = useAuth();
 
   async function queryTrainly(question) {
-    const idToken = await getToken({ template: 'trainly' });
+    const idToken = await getToken({ template: "trainly" });
 
-    const response = await fetch('https://api.trainly.com/v1/me/chats/query', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${idToken}`,
-        'X-App-ID': 'your_app_id',
-        'Content-Type': 'application/x-www-form-urlencoded'
+    const response = await fetch(
+      "https://api.trainlyai.com/v1/me/chats/query",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+          "X-App-ID": "your_app_id",
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          messages: JSON.stringify([{ role: "user", content: question }]),
+        }),
       },
-      body: new URLSearchParams({
-        messages: JSON.stringify([
-          { role: 'user', content: question }
-        ])
-      })
-    });
+    );
 
     return await response.json();
   }
@@ -469,4 +472,3 @@ X-RateLimit-Limit: 60
 X-RateLimit-Remaining: 59
 X-RateLimit-Reset: 1609459200
 ```
-

@@ -55,7 +55,7 @@
     "type": "git",
     "url": "https://github.com/trainly/react-sdk.git"
   },
-  "homepage": "https://trainly.com/docs/react-sdk",
+  "homepage": "https://trainlyai.com/docs/react-sdk",
   "bugs": {
     "url": "https://github.com/trainly/react-sdk/issues"
   },

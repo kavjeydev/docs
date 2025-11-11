@@ -700,4 +700,4 @@ const handleDelete = async (fileId) => {
 
 ---
 
-**Need help?** Check out the [complete example](./examples/file-management-example.tsx) or visit [trainly.com/docs](https://trainly.com/docs) for more documentation.
+**Need help?** Check out the [complete example](./examples/file-management-example.tsx) or visit [trainlyai.com/docs](https://trainlyai.com/docs) for more documentation.

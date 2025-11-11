@@ -1,6 +1,6 @@
 ---
-title: 'Graph Visualization API'
-description: 'Visualize and interact with your knowledge graph'
+title: "Graph Visualization API"
+description: "Visualize and interact with your knowledge graph"
 ---
 
 ## Overview
@@ -8,7 +8,8 @@ description: 'Visualize and interact with your knowledge graph'
 The Graph API provides endpoints to visualize and interact with the underlying knowledge graph structure. This is useful for understanding document relationships and debugging your RAG implementation.
 
 <Info>
-  Graph endpoints are primarily for internal use and visualization. They expose the Neo4j graph structure.
+  Graph endpoints are primarily for internal use and visualization. They expose
+  the Neo4j graph structure.
 </Info>
 
 ## Get Graph Data
@@ -22,7 +23,7 @@ GET /graph_data/{chat_id}
 ### Basic Example
 
 ```bash
-curl -X GET https://api.trainly.com/graph_data/chat_abc123 \
+curl -X GET https://api.trainlyai.com/graph_data/chat_abc123 \
   -H "Authorization: Bearer your_api_key"
 ```
 
@@ -85,24 +86,28 @@ Trainly creates various relationship types automatically:
     **Direction**: Document → Chunk
 
     Links documents to their text chunks.
+
   </Accordion>
 
   <Accordion title="NEXT">
     **Direction**: Chunk → Chunk
 
     Sequential relationship preserving document order.
+
   </Accordion>
 
   <Accordion title="EXPLAINS">
     **Direction**: Chunk → Chunk
 
     AI-generated: One chunk explains concepts in another.
+
   </Accordion>
 
   <Accordion title="SUPPORTS">
     **Direction**: Chunk → Chunk
 
     AI-generated: One chunk provides evidence for another.
+
   </Accordion>
 </AccordionGroup>
 
@@ -153,15 +158,16 @@ DELETE /delete_relationship/{relationship_id}
 ```javascript
 async function renderGraph(chatId) {
   const response = await fetch(
-    `https://api.trainly.com/graph_data/${chatId}`
+    `https://api.trainlyai.com/graph_data/${chatId}`,
   );
   const data = await response.json();
 
   // Create D3 force simulation
-  const simulation = d3.forceSimulation(data.nodes)
-    .force('link', d3.forceLink(data.relationships))
-    .force('charge', d3.forceManyBody())
-    .force('center', d3.forceCenter());
+  const simulation = d3
+    .forceSimulation(data.nodes)
+    .force("link", d3.forceLink(data.relationships))
+    .force("charge", d3.forceManyBody())
+    .force("center", d3.forceCenter());
 
   // Render visualization...
 }

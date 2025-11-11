@@ -915,19 +915,19 @@ function App() {
 // With Clerk
 <TrainlyProvider
   appId="app_v1_clerk_123"
-  baseUrl="https://api.trainly.com"
+  baseUrl="https://api.trainlyai.com"
 />
 
 // With Auth0
 <TrainlyProvider
   appId="app_v1_auth0_456"
-  baseUrl="https://api.trainly.com"
+  baseUrl="https://api.trainlyai.com"
 />
 
 // With AWS Cognito
 <TrainlyProvider
   appId="app_v1_cognito_789"
-  baseUrl="https://api.trainly.com"
+  baseUrl="https://api.trainlyai.com"
 />
 ```
 
@@ -1010,7 +1010,7 @@ interface TrainlyProviderProps {
   appId?: string; // NEW: V1 app ID from console registration
   appSecret?: string; // Legacy: App secret from Trainly dashboard
   apiKey?: string; // Legacy: Direct API key (alternative to appSecret)
-  baseUrl?: string; // Custom API URL (defaults to trainly.com)
+  baseUrl?: string; // Custom API URL (defaults to trainlyai.com)
   userId?: string; // Legacy: Your app's user ID
   userEmail?: string; // Legacy: Your app's user email
 }
@@ -1018,7 +1018,7 @@ interface TrainlyProviderProps {
 
 ## 🔍 Examples
 
-See complete implementation examples in the [API Documentation](https://trainly.com/docs/v1-authentication).
+See complete implementation examples in the [API Documentation](https://trainlyai.com/docs/v1-authentication).
 
 ## 🆚 **V1 vs Legacy Comparison**
 
@@ -1060,9 +1060,9 @@ Contributions welcome! Please read CONTRIBUTING.md for guidelines.
 
 ## 🆘 Support
 
-- 📖 [Documentation](https://trainly.com/docs/react-sdk)
+- 📖 [Documentation](https://trainlyai.com/docs/react-sdk)
 - 💬 [Discord Community](https://discord.gg/trainly)
-- 📧 [Email Support](mailto:support@trainly.com)
+- 📧 [Email Support](mailto:support@trainlyai.com)
 - 🐛 [Report Issues](https://github.com/trainly/react-sdk/issues)
 
 ---

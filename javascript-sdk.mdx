@@ -61,7 +61,7 @@ const trainly = new TrainlyClient({
   chatId: "chat_abc123",
 
   // API Configuration
-  baseUrl: "https://api.trainly.com",
+  baseUrl: "https://api.trainlyai.com",
   timeout: 30000, // Request timeout in milliseconds
 
   // Retry Configuration
@@ -1003,7 +1003,7 @@ interface DeleteResponse {
 ```typescript
 // Before (REST API)
 const response = await fetch(
-  "https://api.trainly.com/v1/chat_abc/answer_question",
+  "https://api.trainlyai.com/v1/chat_abc/answer_question",
   {
     method: "POST",
     headers: {

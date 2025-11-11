@@ -92,7 +92,7 @@
     "links": [
       {
         "label": "Support",
-        "href": "mailto:support@trainly.com"
+        "href": "mailto:support@trainlyai.com"
       },
       {
         "label": "GitHub",
@@ -102,7 +102,7 @@
     "primary": {
       "type": "button",
       "label": "Dashboard",
-      "href": "https://trainly.com/dashboard"
+      "href": "https://trainlyai.com/dashboard"
     }
   },
   "contextual": {

@@ -1,6 +1,6 @@
 ---
-title: 'Scope Management'
-description: 'Advanced data filtering with custom scopes for multi-tenant applications'
+title: "Scope Management"
+description: "Advanced data filtering with custom scopes for multi-tenant applications"
 ---
 
 ## Overview
@@ -8,7 +8,8 @@ description: 'Advanced data filtering with custom scopes for multi-tenant applic
 Scope Management allows you to segment data within a chat using custom attributes. This is perfect for multi-tenant applications, playlist-based content, or any scenario where you need to filter queries to specific subsets of documents.
 
 <Info>
-  Think of scopes as "tags" or "filters" that you attach to documents and then use to filter queries.
+  Think of scopes as "tags" or "filters" that you attach to documents and then
+  use to filter queries.
 </Info>
 
 ## Use Cases
@@ -35,7 +36,7 @@ Scope Management allows you to segment data within a chat using custom attribute
 Configure custom scope fields for your chat:
 
 ```bash POST /v1/{chat_id}/scopes/configure
-curl -X POST https://api.trainly.com/v1/chat_abc123/scopes/configure \
+curl -X POST https://api.trainlyai.com/v1/chat_abc123/scopes/configure \
   -H "Authorization: Bearer tk_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -89,6 +90,7 @@ curl -X POST https://api.trainly.com/v1/chat_abc123/scopes/configure \
     <ParamField body="description" type="string">
       Human-readable description of the scope
     </ParamField>
+
   </Expandable>
 </ParamField>
 
@@ -121,7 +123,7 @@ curl -X POST https://api.trainly.com/v1/chat_abc123/scopes/configure \
 Retrieve current scope configuration:
 
 ```bash GET /v1/{chat_id}/scopes
-curl -X GET https://api.trainly.com/v1/chat_abc123/scopes \
+curl -X GET https://api.trainlyai.com/v1/chat_abc123/scopes \
   -H "Authorization: Bearer tk_your_api_key"
 ```
 
@@ -152,7 +154,7 @@ curl -X GET https://api.trainly.com/v1/chat_abc123/scopes \
 Clear all scope configurations:
 
 ```bash DELETE /v1/{chat_id}/scopes
-curl -X DELETE https://api.trainly.com/v1/chat_abc123/scopes \
+curl -X DELETE https://api.trainlyai.com/v1/chat_abc123/scopes \
   -H "Authorization: Bearer tk_your_api_key"
 ```
 
@@ -177,7 +179,7 @@ curl -X DELETE https://api.trainly.com/v1/chat_abc123/scopes \
 Attach scope values when uploading documents:
 
 ```bash POST /v1/{chat_id}/upload_with_scopes
-curl -X POST https://api.trainly.com/v1/chat_abc123/upload_with_scopes \
+curl -X POST https://api.trainlyai.com/v1/chat_abc123/upload_with_scopes \
   -H "Authorization: Bearer tk_your_api_key" \
   -F "file=@song_lyrics.pdf" \
   -F 'scope_values={"playlist_id":"playlist_summer_2024","workspace_id":"ws_acme","is_public":true}'
@@ -216,7 +218,7 @@ curl -X POST https://api.trainly.com/v1/chat_abc123/upload_with_scopes \
 For V1 authenticated users:
 
 ```bash POST /v1/me/chats/files/upload
-curl -X POST https://api.trainly.com/v1/me/chats/files/upload \
+curl -X POST https://api.trainlyai.com/v1/me/chats/files/upload \
   -H "Authorization: Bearer <USER_OAUTH_ID_TOKEN>" \
   -H "X-App-ID: app_your_app_id" \
   -F "file=@document.pdf" \
@@ -230,7 +232,7 @@ curl -X POST https://api.trainly.com/v1/me/chats/files/upload \
 Only search within documents matching specific scope values:
 
 ```bash POST /v1/{chat_id}/answer_question
-curl -X POST https://api.trainly.com/v1/chat_abc123/answer_question \
+curl -X POST https://api.trainlyai.com/v1/chat_abc123/answer_question \
   -H "Authorization: Bearer tk_your_api_key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -249,7 +251,8 @@ curl -X POST https://api.trainly.com/v1/chat_abc123/answer_question \
 </ParamField>
 
 <ParamField body="scope_filters" type="object">
-  Key-value pairs to filter documents. Only documents with matching scope values will be searched.
+  Key-value pairs to filter documents. Only documents with matching scope values
+  will be searched.
 </ParamField>
 
 **Response**
@@ -274,7 +277,7 @@ curl -X POST https://api.trainly.com/v1/chat_abc123/answer_question \
 ### V1 Query with Scopes
 
 ```bash POST /v1/me/chats/query
-curl -X POST https://api.trainly.com/v1/me/chats/query \
+curl -X POST https://api.trainlyai.com/v1/me/chats/query \
   -H "Authorization: Bearer <USER_OAUTH_ID_TOKEN>" \
   -H "X-App-ID: app_your_app_id" \
   -H "Content-Type: application/x-www-form-urlencoded" \
@@ -290,22 +293,20 @@ Trainly automatically validates scope values against your configuration:
 
 <Steps>
   <Step title="Name Validation">
-    Scope names must start with a letter and contain only alphanumeric, underscores, or hyphens (max 64 chars)
+    Scope names must start with a letter and contain only alphanumeric,
+    underscores, or hyphens (max 64 chars)
   </Step>
   <Step title="Type Validation">
     Values must match the configured type (string, number, or boolean)
   </Step>
-  <Step title="Required Check">
-    Required scopes must be present on upload
-  </Step>
-  <Step title="Length Limits">
-    String values are limited to 255 characters
-  </Step>
+  <Step title="Required Check">Required scopes must be present on upload</Step>
+  <Step title="Length Limits">String values are limited to 255 characters</Step>
 </Steps>
 
 ### Validation Examples
 
 **Valid Scope Names**
+
 ```
 ✅ playlist_id
 ✅ workspace123
@@ -314,6 +315,7 @@ Trainly automatically validates scope values against your configuration:
 ```
 
 **Invalid Scope Names**
+
 ```
 ❌ 123playlist (starts with number)
 ❌ user@email (invalid character)
@@ -327,36 +329,39 @@ Trainly automatically validates scope values against your configuration:
 
 ```javascript
 // Upload document for tenant
-await fetch('https://api.trainly.com/v1/chat_abc/upload_with_scopes', {
-  method: 'POST',
+await fetch("https://api.trainlyai.com/v1/chat_abc/upload_with_scopes", {
+  method: "POST",
   headers: {
-    'Authorization': 'Bearer tk_api_key'
+    Authorization: "Bearer tk_api_key",
   },
   body: formData({
     file: document,
     scope_values: JSON.stringify({
-      tenant_id: 'tenant_acme',
-      workspace_id: 'ws_engineering',
-      access_level: 'internal'
-    })
-  })
+      tenant_id: "tenant_acme",
+      workspace_id: "ws_engineering",
+      access_level: "internal",
+    }),
+  }),
 });
 
 // Query only tenant's data
-const response = await fetch('https://api.trainly.com/v1/chat_abc/answer_question', {
-  method: 'POST',
-  headers: {
-    'Authorization': 'Bearer tk_api_key',
-    'Content-Type': 'application/json'
+const response = await fetch(
+  "https://api.trainlyai.com/v1/chat_abc/answer_question",
+  {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer tk_api_key",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      question: "What are our Q4 goals?",
+      scope_filters: {
+        tenant_id: "tenant_acme",
+        workspace_id: "ws_engineering",
+      },
+    }),
   },
-  body: JSON.stringify({
-    question: 'What are our Q4 goals?',
-    scope_filters: {
-      tenant_id: 'tenant_acme',
-      workspace_id: 'ws_engineering'
-    }
-  })
-});
+);
 ```
 
 ### Content Platform with Playlists
@@ -366,20 +371,20 @@ const response = await fetch('https://api.trainly.com/v1/chat_abc/answer_questio
 await uploadWithScopes({
   file: songFile,
   scope_values: {
-    playlist_id: 'playlist_workout_2024',
-    artist_id: 'artist_123',
-    genre: 'electronic',
-    is_explicit: false
-  }
+    playlist_id: "playlist_workout_2024",
+    artist_id: "artist_123",
+    genre: "electronic",
+    is_explicit: false,
+  },
 });
 
 // Find songs in specific playlist
 const songs = await query({
-  question: 'List all upbeat songs',
+  question: "List all upbeat songs",
   scope_filters: {
-    playlist_id: 'playlist_workout_2024',
-    is_explicit: false
-  }
+    playlist_id: "playlist_workout_2024",
+    is_explicit: false,
+  },
 });
 ```
 
@@ -391,20 +396,20 @@ await uploadWithScopes({
   file: docsFile,
   scope_values: {
     version: 2.1,
-    branch: 'main',
-    environment: 'production',
-    is_latest: true
-  }
+    branch: "main",
+    environment: "production",
+    is_latest: true,
+  },
 });
 
 // Query specific version docs
 const answer = await query({
-  question: 'How do I configure the cache?',
+  question: "How do I configure the cache?",
   scope_filters: {
     version: 2.1,
-    environment: 'production',
-    is_latest: true
-  }
+    environment: "production",
+    is_latest: true,
+  },
 });
 ```
 
@@ -432,13 +437,13 @@ function getScopeFilters(user) {
   return {
     tenant_id: user.tenantId,
     workspace_id: user.activeWorkspace,
-    access_level: user.role
+    access_level: user.role,
   };
 }
 
 const answer = await query({
   question: userQuestion,
-  scope_filters: getScopeFilters(currentUser)
+  scope_filters: getScopeFilters(currentUser),
 });
 ```
 
@@ -498,16 +503,15 @@ scope_filters: {
     - Which scopes will be queried together?
   </Accordion>
 
-  <Accordion title="Use Required Scopes Wisely">
-    Only mark scopes as required if they're truly essential. This provides flexibility for different document types.
-  </Accordion>
+<Accordion title="Use Required Scopes Wisely">
+  Only mark scopes as required if they're truly essential. This provides
+  flexibility for different document types.
+</Accordion>
 
-  <Accordion title="Consistent Naming">
-    Use consistent naming conventions across your application:
-    - snake_case for scope names
-    - Descriptive but concise names
-    - Avoid abbreviations
-  </Accordion>
+<Accordion title="Consistent Naming">
+  Use consistent naming conventions across your application: - snake_case for
+  scope names - Descriptive but concise names - Avoid abbreviations
+</Accordion>
 
   <Accordion title="Document Your Scopes">
     Maintain documentation of what each scope means and when to use it.
@@ -517,11 +521,9 @@ scope_filters: {
 ## Limitations
 
 <Warning>
-  **Current Limitations**:
-  - Maximum 20 scopes per chat
-  - String values limited to 255 characters
-  - Scope names limited to 64 characters
-  - No wildcard matching (must use exact values)
+  **Current Limitations**: - Maximum 20 scopes per chat - String values limited
+  to 255 characters - Scope names limited to 64 characters - No wildcard
+  matching (must use exact values)
 </Warning>
 
 ## Migration Guide
@@ -537,24 +539,20 @@ scope_filters: {
 ```javascript
 // Step 1: Configure scopes
 await configureScopes({
-  scopes: [
-    { name: 'project_id', type: 'string', required: false }
-  ]
+  scopes: [{ name: "project_id", type: "string", required: false }],
 });
 
 // Step 2: Re-upload with scopes
 for (const doc of existingDocs) {
   await uploadWithScopes({
     file: doc.file,
-    scope_values: { project_id: doc.projectId }
+    scope_values: { project_id: doc.projectId },
   });
 }
 
 // Step 3: Update to required
 await configureScopes({
-  scopes: [
-    { name: 'project_id', type: 'string', required: true }
-  ]
+  scopes: [{ name: "project_id", type: "string", required: true }],
 });
 ```
 
@@ -586,4 +584,3 @@ await configureScopes({
   }
   ```
 </ResponseField>
-

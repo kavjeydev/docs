@@ -6591,7 +6591,7 @@ def generate_trainly_token(chat_id: str, user_id: str, subchat_id: str, scopes: 
 
     now = time.time()
     payload = {
-        "iss": "trainly.com",
+        "iss": "trainlyai.com",
         "sub": user_id,
         "aud": "trainly-api",
         "exp": now + 3600,  # 1 hour expiry
@@ -6676,7 +6676,7 @@ async def user_chat_query(
         is_developer_call = True
         if req:
             origin = req.headers.get("origin", "")
-            if "trainly.com" in origin or "localhost:3000" in origin:
+            if "trainlyai.com" in origin or "localhost:3000" in origin:
                 is_developer_call = False
 
         response = {
@@ -6693,7 +6693,7 @@ async def user_chat_query(
                 response["citations_summary"] = {
                     "sources_used": len(result["context"]),
                     "confidence": "high" if result["context"][0]["score"] > 0.8 else "medium",
-                    "privacy_note": "Citations filtered for privacy - full access at trainly.com"
+                    "privacy_note": "Citations filtered for privacy - full access at trainlyai.com"
                 }
             else:
                 # Direct user gets full citations
