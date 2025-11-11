@@ -367,6 +367,909 @@ successful = sum(1 for r in results if r["success"])
 print(f"\nUploaded {successful}/{len(results)} files successfully")
 ```
 
+### Upload from URL
+
+```python
+import requests
+from io import BytesIO
+
+def upload_from_url(url: str, filename: str):
+    """Download file from URL and upload to Trainly"""
+
+    # Download file
+    response = requests.get(url, stream=True)
+    response.raise_for_status()
+
+    # Get file content
+    file_content = BytesIO(response.content)
+
+    # Upload to Trainly
+    result = trainly.upload_file(
+        file=file_content,
+        filename=filename,
+        scope_values={
+            "source": "url",
+            "original_url": url
+        }
+    )
+
+    return result
+
+# Usage
+result = upload_from_url(
+    "https://example.com/research_paper.pdf",
+    "research_paper.pdf"
+)
+
+print(f"Uploaded from URL: {result.filename}")
+```
+
+### Upload with Validation
+
+```python
+from pathlib import Path
+from typing import Optional
+import mimetypes
+
+class FileValidator:
+    """Validate files before uploading"""
+
+    MAX_SIZE = 5 * 1024 * 1024  # 5MB
+    ALLOWED_TYPES = {
+        'application/pdf',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'text/plain',
+        'text/markdown',
+        'application/json'
+    }
+
+    @classmethod
+    def validate(cls, file_path: Path) -> tuple[bool, Optional[str]]:
+        """Validate file before upload"""
+
+        # Check if file exists
+        if not file_path.exists():
+            return False, f"File not found: {file_path}"
+
+        # Check file size
+        file_size = file_path.stat().st_size
+        if file_size > cls.MAX_SIZE:
+            return False, f"File too large: {file_size / 1024 / 1024:.1f}MB (max 5MB)"
+
+        # Check MIME type
+        mime_type, _ = mimetypes.guess_type(str(file_path))
+        if mime_type not in cls.ALLOWED_TYPES:
+            return False, f"Unsupported file type: {mime_type}"
+
+        return True, None
+
+# Usage with validation
+def safe_upload(file_path: str):
+    """Upload with validation"""
+    path = Path(file_path)
+
+    # Validate before upload
+    is_valid, error = FileValidator.validate(path)
+
+    if not is_valid:
+        print(f"Validation failed: {error}")
+        return None
+
+    # Upload if valid
+    try:
+        with open(path, "rb") as file:
+            result = trainly.upload_file(
+                file=file,
+                filename=path.name
+            )
+
+        print(f"✓ Uploaded: {result.filename}")
+        return result
+
+    except Exception as e:
+        print(f"✗ Upload failed: {e}")
+        return None
+
+# Example
+result = safe_upload("./documents/research.pdf")
+```
+
+### Upload with Checksum Verification
+
+```python
+import hashlib
+from pathlib import Path
+
+def calculate_md5(file_path: Path) -> str:
+    """Calculate MD5 checksum of file"""
+    md5_hash = hashlib.md5()
+
+    with open(file_path, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            md5_hash.update(chunk)
+
+    return md5_hash.hexdigest()
+
+def upload_with_checksum(file_path: str, expected_checksum: str = None):
+    """Upload file with checksum verification"""
+    path = Path(file_path)
+
+    # Calculate checksum
+    actual_checksum = calculate_md5(path)
+    print(f"File checksum: {actual_checksum}")
+
+    # Verify if expected checksum provided
+    if expected_checksum and actual_checksum != expected_checksum:
+        raise ValueError(
+            f"Checksum mismatch! Expected {expected_checksum}, got {actual_checksum}"
+        )
+
+    # Upload file
+    with open(path, "rb") as file:
+        result = trainly.upload_file(
+            file=file,
+            filename=path.name,
+            scope_values={
+                "checksum": actual_checksum,
+                "verified": expected_checksum is not None
+            }
+        )
+
+    print(f"✓ Uploaded with verified checksum: {result.filename}")
+    return result
+
+# Usage
+result = upload_with_checksum(
+    "./important_document.pdf",
+    expected_checksum="abc123def456..."
+)
+```
+
+### Upload with Retry Logic
+
+```python
+import time
+from typing import Optional
+
+def upload_with_retry(
+    file_path: str,
+    max_attempts: int = 3,
+    retry_delay: float = 1.0
+) -> Optional[any]:
+    """Upload file with automatic retry on failure"""
+
+    for attempt in range(1, max_attempts + 1):
+        try:
+            print(f"Upload attempt {attempt}/{max_attempts}...")
+
+            with open(file_path, "rb") as file:
+                result = trainly.upload_file(
+                    file=file,
+                    filename=Path(file_path).name
+                )
+
+            print(f"✓ Upload successful on attempt {attempt}")
+            return result
+
+        except Exception as e:
+            print(f"✗ Attempt {attempt} failed: {e}")
+
+            if attempt < max_attempts:
+                # Exponential backoff
+                wait_time = retry_delay * (2 ** (attempt - 1))
+                print(f"Waiting {wait_time:.1f}s before retry...")
+                time.sleep(wait_time)
+            else:
+                print(f"Failed after {max_attempts} attempts")
+                raise
+
+# Usage
+try:
+    result = upload_with_retry(
+        "./research.pdf",
+        max_attempts=3,
+        retry_delay=2.0
+    )
+except Exception as e:
+    print(f"Upload permanently failed: {e}")
+```
+
+### Upload Directory Structure
+
+```python
+from pathlib import Path
+from collections import defaultdict
+
+def upload_directory(
+    directory: str,
+    preserve_structure: bool = True,
+    file_extensions: list = None
+):
+    """Upload all files from a directory"""
+
+    dir_path = Path(directory)
+
+    if not dir_path.is_dir():
+        raise ValueError(f"Not a directory: {directory}")
+
+    # Default to common document types
+    if file_extensions is None:
+        file_extensions = ['.pdf', '.docx', '.txt', '.md']
+
+    # Find all matching files
+    files_by_type = defaultdict(list)
+
+    for ext in file_extensions:
+        files = list(dir_path.rglob(f"*{ext}"))
+        files_by_type[ext].extend(files)
+
+    # Upload statistics
+    stats = {
+        "total": 0,
+        "successful": 0,
+        "failed": 0,
+        "by_type": {}
+    }
+
+    # Upload each file
+    for ext, files in files_by_type.items():
+        print(f"\nUploading {ext} files: {len(files)}")
+
+        for file_path in files:
+            stats["total"] += 1
+
+            try:
+                # Calculate relative path for scope
+                rel_path = file_path.relative_to(dir_path)
+                folder = str(rel_path.parent) if rel_path.parent != Path('.') else "root"
+
+                with open(file_path, "rb") as file:
+                    result = trainly.upload_file(
+                        file=file,
+                        filename=file_path.name,
+                        scope_values={
+                            "folder": folder,
+                            "extension": ext,
+                            "full_path": str(rel_path) if preserve_structure else file_path.name
+                        }
+                    )
+
+                stats["successful"] += 1
+                stats["by_type"][ext] = stats["by_type"].get(ext, 0) + 1
+                print(f"  ✓ {rel_path}")
+
+            except Exception as e:
+                stats["failed"] += 1
+                print(f"  ✗ {rel_path}: {e}")
+
+    # Print summary
+    print("\n" + "=" * 50)
+    print(f"Upload Summary:")
+    print(f"  Total: {stats['total']}")
+    print(f"  Successful: {stats['successful']}")
+    print(f"  Failed: {stats['failed']}")
+    print(f"  Success rate: {stats['successful'] / stats['total'] * 100:.1f}%")
+    print(f"\nBy type:")
+    for ext, count in stats["by_type"].items():
+        print(f"  {ext}: {count} files")
+
+    return stats
+
+# Usage
+stats = upload_directory(
+    "./research_documents",
+    preserve_structure=True,
+    file_extensions=['.pdf', '.docx', '.txt']
+)
+```
+
+### Upload with Metadata Extraction
+
+```python
+from PyPDF2 import PdfReader
+from datetime import datetime
+import docx
+
+def extract_pdf_metadata(file_path: str) -> dict:
+    """Extract metadata from PDF"""
+    try:
+        reader = PdfReader(file_path)
+        metadata = reader.metadata
+
+        return {
+            "title": metadata.get("/Title", "Unknown"),
+            "author": metadata.get("/Author", "Unknown"),
+            "pages": len(reader.pages),
+            "created": metadata.get("/CreationDate", "Unknown")
+        }
+    except:
+        return {}
+
+def extract_docx_metadata(file_path: str) -> dict:
+    """Extract metadata from DOCX"""
+    try:
+        doc = docx.Document(file_path)
+        props = doc.core_properties
+
+        return {
+            "title": props.title or "Unknown",
+            "author": props.author or "Unknown",
+            "created": props.created.isoformat() if props.created else "Unknown",
+            "modified": props.modified.isoformat() if props.modified else "Unknown",
+            "paragraphs": len(doc.paragraphs)
+        }
+    except:
+        return {}
+
+def upload_with_metadata(file_path: str):
+    """Upload file and include extracted metadata as scopes"""
+    path = Path(file_path)
+
+    # Extract metadata based on file type
+    if path.suffix == '.pdf':
+        metadata = extract_pdf_metadata(file_path)
+    elif path.suffix == '.docx':
+        metadata = extract_docx_metadata(file_path)
+    else:
+        metadata = {}
+
+    # Add file info
+    file_stat = path.stat()
+    metadata.update({
+        "file_size": file_stat.st_size,
+        "upload_date": datetime.now().isoformat(),
+        "file_extension": path.suffix
+    })
+
+    # Upload with metadata
+    with open(file_path, "rb") as file:
+        result = trainly.upload_file(
+            file=file,
+            filename=path.name,
+            scope_values=metadata
+        )
+
+    print(f"Uploaded with metadata: {result.filename}")
+    print(f"  Title: {metadata.get('title', 'N/A')}")
+    print(f"  Author: {metadata.get('author', 'N/A')}")
+    print(f"  Pages: {metadata.get('pages', 'N/A')}")
+
+    return result
+
+# Usage
+result = upload_with_metadata("./research_paper.pdf")
+```
+
+### Upload from Pandas DataFrame
+
+```python
+import pandas as pd
+from io import StringIO
+
+def upload_dataframe(
+    df: pd.DataFrame,
+    name: str,
+    description: str = None
+):
+    """Upload pandas DataFrame as CSV content"""
+
+    # Convert to CSV string
+    csv_buffer = StringIO()
+    df.to_csv(csv_buffer, index=False)
+    csv_content = csv_buffer.getvalue()
+
+    # Add DataFrame info as header
+    info_text = f"""
+Dataset: {name}
+{description or ''}
+
+Rows: {len(df)}
+Columns: {len(df.columns)}
+Column Names: {', '.join(df.columns)}
+
+Data:
+{csv_content}
+    """.strip()
+
+    # Upload as text
+    result = trainly.upload_text(
+        content=info_text,
+        name=f"{name}.csv",
+        scope_values={
+            "type": "dataframe",
+            "rows": len(df),
+            "columns": len(df.columns),
+            "format": "csv"
+        }
+    )
+
+    print(f"Uploaded DataFrame: {name}")
+    print(f"  Shape: {df.shape}")
+    print(f"  Columns: {list(df.columns)}")
+
+    return result
+
+# Usage
+df = pd.DataFrame({
+    'name': ['Alice', 'Bob', 'Charlie'],
+    'age': [25, 30, 35],
+    'score': [95, 87, 92]
+})
+
+result = upload_dataframe(
+    df,
+    name="student_scores",
+    description="Q4 2024 student performance data"
+)
+```
+
+### Upload from Google Drive
+
+```python
+from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaIoBaseDownload
+from io import BytesIO
+
+def upload_from_google_drive(
+    file_id: str,
+    filename: str,
+    credentials: Credentials
+):
+    """Download from Google Drive and upload to Trainly"""
+
+    # Build Drive API client
+    service = build('drive', 'v3', credentials=credentials)
+
+    # Download file
+    request = service.files().get_media(fileId=file_id)
+    file_buffer = BytesIO()
+
+    downloader = MediaIoBaseDownload(file_buffer, request)
+    done = False
+
+    print("Downloading from Google Drive...")
+    while not done:
+        status, done = downloader.next_chunk()
+        print(f"  Progress: {int(status.progress() * 100)}%")
+
+    # Reset buffer position
+    file_buffer.seek(0)
+
+    # Upload to Trainly
+    result = trainly.upload_file(
+        file=file_buffer,
+        filename=filename,
+        scope_values={
+            "source": "google_drive",
+            "drive_file_id": file_id
+        }
+    )
+
+    print(f"✓ Uploaded from Drive: {result.filename}")
+    return result
+
+# Usage (requires google-api-python-client and credentials)
+# result = upload_from_google_drive(
+#     "1234567890abcdef",
+#     "document.pdf",
+#     credentials
+# )
+```
+
+### Upload from S3
+
+```python
+import boto3
+from io import BytesIO
+
+def upload_from_s3(
+    bucket: str,
+    key: str,
+    filename: str = None
+):
+    """Download from S3 and upload to Trainly"""
+
+    # Initialize S3 client
+    s3 = boto3.client('s3')
+
+    # Download from S3
+    buffer = BytesIO()
+
+    print(f"Downloading from S3: s3://{bucket}/{key}")
+    s3.download_fileobj(bucket, key, buffer)
+
+    buffer.seek(0)
+
+    # Use key as filename if not provided
+    if filename is None:
+        filename = key.split('/')[-1]
+
+    # Upload to Trainly
+    result = trainly.upload_file(
+        file=buffer,
+        filename=filename,
+        scope_values={
+            "source": "s3",
+            "bucket": bucket,
+            "key": key
+        }
+    )
+
+    print(f"✓ Uploaded from S3: {result.filename}")
+    return result
+
+# Usage
+result = upload_from_s3(
+    bucket="my-documents",
+    key="research/paper.pdf",
+    filename="research_paper.pdf"
+)
+```
+
+### Async Bulk Upload
+
+```python
+import asyncio
+from pathlib import Path
+from trainly import AsyncTrainlyClient
+
+async def async_bulk_upload(file_paths: list):
+    """Upload multiple files concurrently"""
+
+    trainly = AsyncTrainlyClient(
+        api_key=os.getenv("TRAINLY_API_KEY"),
+        chat_id=os.getenv("TRAINLY_CHAT_ID")
+    )
+
+    async def upload_one(file_path: str):
+        """Upload a single file"""
+        try:
+            with open(file_path, "rb") as file:
+                result = await trainly.upload_file(
+                    file=file,
+                    filename=Path(file_path).name
+                )
+
+            return {"file": Path(file_path).name, "success": True, "result": result}
+
+        except Exception as e:
+            return {"file": Path(file_path).name, "success": False, "error": str(e)}
+
+    # Upload all files concurrently
+    print(f"Uploading {len(file_paths)} files concurrently...")
+
+    tasks = [upload_one(path) for path in file_paths]
+    results = await asyncio.gather(*tasks)
+
+    # Summary
+    successful = sum(1 for r in results if r["success"])
+    print(f"\n✓ Uploaded {successful}/{len(results)} files")
+
+    return results
+
+# Usage
+file_paths = [
+    "./doc1.pdf",
+    "./doc2.pdf",
+    "./doc3.txt"
+]
+
+results = asyncio.run(async_bulk_upload(file_paths))
+
+# Print details
+for result in results:
+    if result["success"]:
+        print(f"✓ {result['file']}: {result['result'].file_id}")
+    else:
+        print(f"✗ {result['file']}: {result['error']}")
+```
+
+### Upload with Progress Callback
+
+```python
+from pathlib import Path
+from typing import Callable
+
+class ProgressTracker:
+    """Track upload progress"""
+
+    def __init__(self, total_files: int, callback: Callable = None):
+        self.total_files = total_files
+        self.completed = 0
+        self.failed = 0
+        self.callback = callback
+
+    def update(self, success: bool, filename: str, error: str = None):
+        """Update progress"""
+        if success:
+            self.completed += 1
+            print(f"✓ [{self.completed}/{self.total_files}] {filename}")
+        else:
+            self.failed += 1
+            print(f"✗ [{self.completed + self.failed}/{self.total_files}] {filename}: {error}")
+
+        # Call custom callback
+        if self.callback:
+            self.callback(
+                completed=self.completed,
+                failed=self.failed,
+                total=self.total_files,
+                filename=filename
+            )
+
+    def summary(self):
+        """Print summary"""
+        print("\n" + "=" * 50)
+        print(f"Upload Summary:")
+        print(f"  Completed: {self.completed}")
+        print(f"  Failed: {self.failed}")
+        print(f"  Total: {self.total_files}")
+        print(f"  Success rate: {self.completed / self.total_files * 100:.1f}%")
+
+def upload_with_progress(file_paths: list, callback: Callable = None):
+    """Upload files with progress tracking"""
+
+    tracker = ProgressTracker(len(file_paths), callback)
+
+    for file_path in file_paths:
+        try:
+            with open(file_path, "rb") as file:
+                result = trainly.upload_file(
+                    file=file,
+                    filename=Path(file_path).name
+                )
+
+            tracker.update(True, Path(file_path).name)
+
+        except Exception as e:
+            tracker.update(False, Path(file_path).name, str(e))
+
+    tracker.summary()
+
+# Usage with custom callback
+def progress_callback(completed, failed, total, filename):
+    """Custom callback for progress updates"""
+    progress = (completed + failed) / total * 100
+    print(f"  Overall progress: {progress:.1f}%")
+
+upload_with_progress(
+    ["./doc1.pdf", "./doc2.pdf", "./doc3.txt"],
+    callback=progress_callback
+)
+```
+
+### Upload JSON Data
+
+```python
+import json
+from typing import Dict, List
+
+def upload_json_data(
+    data: Dict or List,
+    name: str,
+    pretty: bool = True
+):
+    """Upload JSON data as a document"""
+
+    # Convert to formatted JSON string
+    if pretty:
+        json_content = json.dumps(data, indent=2, ensure_ascii=False)
+    else:
+        json_content = json.dumps(data, ensure_ascii=False)
+
+    # Add metadata header
+    content = f"""
+JSON Document: {name}
+
+Records: {len(data) if isinstance(data, list) else 'N/A'}
+Type: {'Array' if isinstance(data, list) else 'Object'}
+
+Content:
+{json_content}
+    """.strip()
+
+    # Upload as text
+    result = trainly.upload_text(
+        content=content,
+        name=f"{name}.json",
+        scope_values={
+            "type": "json",
+            "format": "json",
+            "pretty": pretty,
+            "records": len(data) if isinstance(data, list) else 0
+        }
+    )
+
+    print(f"Uploaded JSON: {name}")
+    return result
+
+# Usage with dictionary
+config = {
+    "api_version": "1.0",
+    "features": ["chat", "upload", "search"],
+    "settings": {
+        "model": "gpt-4o-mini",
+        "temperature": 0.7
+    }
+}
+
+result = upload_json_data(config, "api_configuration")
+
+# Usage with list
+records = [
+    {"id": 1, "name": "Alice", "score": 95},
+    {"id": 2, "name": "Bob", "score": 87},
+    {"id": 3, "name": "Charlie", "score": 92}
+]
+
+result = upload_json_data(records, "student_scores")
+```
+
+### Upload Web Content
+
+```python
+import requests
+from bs4 import BeautifulSoup
+
+def upload_webpage(
+    url: str,
+    extract_text_only: bool = True
+):
+    """Scrape and upload webpage content"""
+
+    # Fetch webpage
+    response = requests.get(url, timeout=10)
+    response.raise_for_status()
+
+    if extract_text_only:
+        # Extract text content only
+        soup = BeautifulSoup(response.content, 'html.parser')
+
+        # Remove script and style elements
+        for script in soup(["script", "style"]):
+            script.decompose()
+
+        # Get text
+        text = soup.get_text()
+
+        # Clean up whitespace
+        lines = (line.strip() for line in text.splitlines())
+        chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+        text = '\n'.join(chunk for chunk in chunks if chunk)
+
+        content = f"""
+Webpage: {url}
+Title: {soup.title.string if soup.title else 'No title'}
+Extracted: {datetime.now().isoformat()}
+
+Content:
+{text}
+        """.strip()
+    else:
+        # Use raw HTML
+        content = response.text
+
+    # Upload to Trainly
+    result = trainly.upload_text(
+        content=content,
+        name=f"webpage_{url.split('/')[-1]}.txt",
+        scope_values={
+            "type": "webpage",
+            "url": url,
+            "extracted_text": extract_text_only,
+            "scraped_at": datetime.now().isoformat()
+        }
+    )
+
+    print(f"Uploaded webpage: {url}")
+    return result
+
+# Usage
+result = upload_webpage(
+    "https://example.com/article",
+    extract_text_only=True
+)
+```
+
+### Upload with Python Type Checking
+
+```python
+from typing import Union, BinaryIO
+from pathlib import Path
+
+def type_safe_upload(
+    file: Union[str, Path, bytes, BinaryIO],
+    filename: str = None,
+    **kwargs
+):
+    """Type-safe upload that handles multiple input types"""
+
+    if isinstance(file, (str, Path)):
+        # File path provided
+        path = Path(file)
+        with open(path, "rb") as f:
+            return trainly.upload_file(
+                file=f,
+                filename=filename or path.name,
+                **kwargs
+            )
+
+    elif isinstance(file, bytes):
+        # Bytes provided
+        if not filename:
+            raise ValueError("filename required when uploading bytes")
+
+        return trainly.upload_file(
+            file=file,
+            filename=filename,
+            **kwargs
+        )
+
+    elif hasattr(file, 'read'):
+        # File-like object
+        if not filename:
+            filename = getattr(file, 'name', 'uploaded_file.txt')
+
+        return trainly.upload_file(
+            file=file,
+            filename=filename,
+            **kwargs
+        )
+
+    else:
+        raise TypeError(f"Unsupported file type: {type(file)}")
+
+# Usage - all valid
+result1 = type_safe_upload("./doc.pdf")  # File path
+result2 = type_safe_upload(Path("./doc.pdf"))  # Path object
+result3 = type_safe_upload(b"content", filename="data.txt")  # Bytes
+result4 = type_safe_upload(open("./doc.pdf", "rb"))  # File object
+```
+
+### Upload Using Context Manager
+
+```python
+from contextlib import contextmanager
+from pathlib import Path
+import tempfile
+import os
+
+@contextmanager
+def temporary_upload(content: str, suffix: str = ".txt"):
+    """Context manager for temporary file uploads"""
+
+    # Create temporary file
+    fd, temp_path = tempfile.mkstemp(suffix=suffix)
+
+    try:
+        # Write content
+        with os.fdopen(fd, 'w') as f:
+            f.write(content)
+
+        # Upload to Trainly
+        with open(temp_path, "rb") as f:
+            result = trainly.upload_file(
+                file=f,
+                filename=Path(temp_path).name,
+                scope_values={"temporary": True}
+            )
+
+        yield result
+
+    finally:
+        # Cleanup
+        if os.path.exists(temp_path):
+            os.unlink(temp_path)
+        print(f"Cleaned up temporary file")
+
+# Usage
+with temporary_upload("This is temporary content", suffix=".txt") as result:
+    print(f"Uploaded temporarily: {result.file_id}")
+    # Do something with the uploaded file
+    # File will be cleaned up automatically after the block
+```
+
 ### List Files
 
 ```python
@@ -397,6 +1300,69 @@ def format_bytes(bytes: int) -> str:
         i += 1
 
     return f"{bytes:.1f} {sizes[i]}"
+```
+
+### Advanced File Filtering
+
+```python
+from datetime import datetime, timedelta
+
+def list_files_with_filters(
+    min_size: int = None,
+    max_size: int = None,
+    extensions: list = None,
+    uploaded_after: datetime = None
+):
+    """List files with custom filtering"""
+
+    files = trainly.list_files()
+    filtered = files.files
+
+    # Filter by size
+    if min_size:
+        filtered = [f for f in filtered if f.size_bytes >= min_size]
+
+    if max_size:
+        filtered = [f for f in filtered if f.size_bytes <= max_size]
+
+    # Filter by extension
+    if extensions:
+        filtered = [
+            f for f in filtered
+            if any(f.filename.endswith(ext) for ext in extensions)
+        ]
+
+    # Filter by upload date
+    if uploaded_after:
+        filtered = [
+            f for f in filtered
+            if datetime.fromisoformat(f.upload_date) > uploaded_after
+        ]
+
+    return filtered
+
+# Usage examples
+
+# Get large PDFs only
+large_pdfs = list_files_with_filters(
+    min_size=1024 * 1024,  # > 1MB
+    extensions=['.pdf']
+)
+
+# Get recent uploads (last 7 days)
+recent_files = list_files_with_filters(
+    uploaded_after=datetime.now() - timedelta(days=7)
+)
+
+# Get small text files
+small_texts = list_files_with_filters(
+    max_size=100 * 1024,  # < 100KB
+    extensions=['.txt', '.md']
+)
+
+print(f"Found {len(large_pdfs)} large PDFs")
+print(f"Found {len(recent_files)} recent files")
+print(f"Found {len(small_texts)} small text files")
 ```
 
 ### Delete Files
@@ -475,6 +1441,724 @@ for file in files.files:
 # Delete user's file
 result = trainly.delete_file(file_id)
 print(f"Deleted: {result.filename}")
+```
+
+## Python-Specific Patterns
+
+### Decorators for Common Tasks
+
+```python
+from functools import wraps
+from time import time
+import logging
+
+def log_query(func):
+    """Decorator to log query execution"""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        logger = logging.getLogger(__name__)
+        question = kwargs.get('question', args[0] if args else 'unknown')
+
+        logger.info(f"Query started: {question[:50]}...")
+        start = time()
+
+        try:
+            result = func(*args, **kwargs)
+            duration = (time() - start) * 1000
+            logger.info(f"Query completed in {duration:.0f}ms")
+            return result
+        except Exception as e:
+            duration = (time() - start) * 1000
+            logger.error(f"Query failed after {duration:.0f}ms: {e}")
+            raise
+
+    return wrapper
+
+def cache_query(ttl_seconds: int = 300):
+    """Decorator to cache query results"""
+    cache = {}
+
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            # Create cache key
+            question = kwargs.get('question', args[0] if args else '')
+            cache_key = f"{question}:{kwargs.get('model', 'default')}"
+
+            # Check cache
+            if cache_key in cache:
+                result, timestamp = cache[cache_key]
+                if time() - timestamp < ttl_seconds:
+                    print(f"Cache hit! (age: {time() - timestamp:.1f}s)")
+                    return result
+
+            # Execute function
+            result = func(*args, **kwargs)
+
+            # Store in cache
+            cache[cache_key] = (result, time())
+
+            return result
+
+        return wrapper
+    return decorator
+
+def measure_credits(func):
+    """Decorator to measure credit usage"""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        # Get model from kwargs
+        model = kwargs.get('model', 'gpt-4o-mini')
+
+        # Execute query
+        result = func(*args, **kwargs)
+
+        # Calculate credits
+        if hasattr(result, 'usage'):
+            tokens = result.usage.total_tokens
+            multiplier = MODEL_MULTIPLIERS.get(model, 1)
+            credits = (tokens / 1000) * multiplier
+
+            print(f"Credits used: {credits:.3f} ({tokens} tokens, {model})")
+
+        return result
+
+    return wrapper
+
+# Usage
+@log_query
+@cache_query(ttl_seconds=300)
+@measure_credits
+def smart_query(question: str, **kwargs):
+    return trainly.query(question=question, **kwargs)
+
+# All decorators are applied automatically
+response = smart_query("What is AI?", model="gpt-4o-mini")
+```
+
+### Property-Based Testing
+
+```python
+from hypothesis import given, strategies as st
+from trainly import TrainlyClient
+
+trainly = TrainlyClient(
+    api_key=os.getenv("TRAINLY_TEST_API_KEY"),
+    chat_id=os.getenv("TRAINLY_TEST_CHAT_ID")
+)
+
+@given(st.text(min_size=1, max_size=100))
+def test_query_handles_any_string(question):
+    """Property test: query should handle any valid string"""
+    try:
+        response = trainly.query(question=question)
+
+        # Properties that should always be true
+        assert isinstance(response.answer, str)
+        assert len(response.answer) > 0
+        assert isinstance(response.context, list)
+        assert response.usage.total_tokens > 0
+
+    except Exception as e:
+        # Some strings might be rejected (empty, too long, etc.)
+        # But the error should be a known type
+        assert isinstance(e, (ValidationError, ValueError))
+
+# Run the test with 100 random strings
+test_query_handles_any_string()
+```
+
+### Custom Context Manager
+
+```python
+from contextlib import contextmanager
+from trainly import TrainlyClient
+import time
+
+class TrainlySession:
+    """Session manager with automatic cleanup and stats"""
+
+    def __init__(self, api_key: str, chat_id: str):
+        self.client = TrainlyClient(api_key=api_key, chat_id=chat_id)
+        self.queries_made = 0
+        self.credits_used = 0
+        self.start_time = None
+
+    def __enter__(self):
+        self.start_time = time.time()
+        print(f"Starting Trainly session...")
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        duration = time.time() - self.start_time
+        print(f"\nSession Summary:")
+        print(f"  Duration: {duration:.1f}s")
+        print(f"  Queries: {self.queries_made}")
+        print(f"  Credits used: {self.credits_used:.3f}")
+        if self.queries_made > 0:
+            print(f"  Avg credits/query: {self.credits_used / self.queries_made:.3f}")
+
+        return False  # Don't suppress exceptions
+
+    def query(self, question: str, **kwargs):
+        """Query with automatic tracking"""
+        response = self.client.query(question=question, **kwargs)
+
+        # Track usage
+        self.queries_made += 1
+
+        model = kwargs.get('model', 'gpt-4o-mini')
+        multiplier = MODEL_MULTIPLIERS.get(model, 1)
+        credits = (response.usage.total_tokens / 1000) * multiplier
+        self.credits_used += credits
+
+        return response
+
+# Usage
+with TrainlySession(
+    api_key=os.getenv("TRAINLY_API_KEY"),
+    chat_id=os.getenv("TRAINLY_CHAT_ID")
+) as session:
+    response1 = session.query("What is AI?")
+    response2 = session.query("What is ML?")
+    response3 = session.query("What is NLP?")
+    # Stats printed automatically on exit
+```
+
+### Generator-Based File Processing
+
+```python
+from pathlib import Path
+from typing import Generator, Dict
+
+def process_files_generator(
+    directory: str,
+    chunk_size: int = 10
+) -> Generator[Dict, None, None]:
+    """Generator that yields upload results in chunks"""
+
+    files = list(Path(directory).rglob("*.pdf"))
+
+    for i in range(0, len(files), chunk_size):
+        chunk = files[i:i + chunk_size]
+        results = []
+
+        for file_path in chunk:
+            try:
+                with open(file_path, "rb") as file:
+                    result = trainly.upload_file(
+                        file=file,
+                        filename=file_path.name
+                    )
+
+                results.append({
+                    "filename": file_path.name,
+                    "success": True,
+                    "file_id": result.file_id
+                })
+
+            except Exception as e:
+                results.append({
+                    "filename": file_path.name,
+                    "success": False,
+                    "error": str(e)
+                })
+
+        # Yield chunk results
+        yield {
+            "chunk": i // chunk_size + 1,
+            "total_chunks": (len(files) + chunk_size - 1) // chunk_size,
+            "results": results
+        }
+
+# Usage
+for chunk_result in process_files_generator("./documents", chunk_size=5):
+    print(f"\nProcessed chunk {chunk_result['chunk']}/{chunk_result['total_chunks']}")
+
+    successful = sum(1 for r in chunk_result['results'] if r['success'])
+    print(f"  Success: {successful}/{len(chunk_result['results'])}")
+
+    # You can pause, save state, or perform other operations between chunks
+```
+
+### Dataclass Integration
+
+```python
+from dataclasses import dataclass, asdict
+from typing import List, Optional
+from datetime import datetime
+
+@dataclass
+class DocumentMetadata:
+    """Structured metadata for documents"""
+    title: str
+    author: str
+    category: str
+    tags: List[str]
+    created_date: datetime
+    language: str = "en"
+    version: Optional[str] = None
+
+@dataclass
+class UploadJob:
+    """Represents a complete upload job"""
+    file_path: str
+    metadata: DocumentMetadata
+    priority: int = 0
+
+    def upload(self, trainly_client: TrainlyClient):
+        """Execute the upload"""
+        with open(self.file_path, "rb") as file:
+            return trainly_client.upload_file(
+                file=file,
+                filename=Path(self.file_path).name,
+                scope_values=asdict(self.metadata)  # Convert dataclass to dict
+            )
+
+# Usage
+metadata = DocumentMetadata(
+    title="Research Paper 2024",
+    author="Dr. Smith",
+    category="research",
+    tags=["ai", "machine-learning", "nlp"],
+    created_date=datetime.now(),
+    version="1.0"
+)
+
+job = UploadJob(
+    file_path="./research.pdf",
+    metadata=metadata,
+    priority=1
+)
+
+result = job.upload(trainly)
+print(f"Uploaded: {result.filename}")
+```
+
+### Multiprocessing for Large Uploads
+
+```python
+from multiprocessing import Pool, Manager
+from pathlib import Path
+import os
+
+def upload_worker(args):
+    """Worker function for multiprocessing"""
+    file_path, api_key, chat_id, shared_list = args
+
+    # Create client in worker process
+    from trainly import TrainlyClient
+
+    trainly = TrainlyClient(
+        api_key=api_key,
+        chat_id=chat_id
+    )
+
+    try:
+        with open(file_path, "rb") as file:
+            result = trainly.upload_file(
+                file=file,
+                filename=Path(file_path).name
+            )
+
+        result_dict = {
+            "filename": Path(file_path).name,
+            "success": True,
+            "file_id": result.file_id,
+            "size": result.size_bytes
+        }
+
+        shared_list.append(result_dict)
+        return result_dict
+
+    except Exception as e:
+        error_dict = {
+            "filename": Path(file_path).name,
+            "success": False,
+            "error": str(e)
+        }
+
+        shared_list.append(error_dict)
+        return error_dict
+
+def parallel_upload(
+    file_paths: list,
+    api_key: str,
+    chat_id: str,
+    workers: int = 4
+):
+    """Upload files in parallel using multiprocessing"""
+
+    manager = Manager()
+    shared_list = manager.list()
+
+    # Prepare arguments for workers
+    args_list = [
+        (path, api_key, chat_id, shared_list)
+        for path in file_paths
+    ]
+
+    print(f"Uploading {len(file_paths)} files using {workers} workers...")
+
+    with Pool(processes=workers) as pool:
+        results = pool.map(upload_worker, args_list)
+
+    # Summary
+    successful = sum(1 for r in results if r["success"])
+    total_size = sum(r.get("size", 0) for r in results if r["success"])
+
+    print(f"\nParallel Upload Complete:")
+    print(f"  Successful: {successful}/{len(file_paths)}")
+    print(f"  Total size: {format_bytes(total_size)}")
+
+    return results
+
+# Usage
+file_paths = [f"./doc{i}.pdf" for i in range(1, 21)]
+
+results = parallel_upload(
+    file_paths,
+    api_key=os.getenv("TRAINLY_API_KEY"),
+    chat_id=os.getenv("TRAINLY_CHAT_ID"),
+    workers=4
+)
+```
+
+### Pydantic Integration
+
+```python
+from pydantic import BaseModel, Field, validator
+from typing import List, Optional
+from datetime import datetime
+
+class DocumentUpload(BaseModel):
+    """Pydantic model for validated uploads"""
+
+    file_path: str = Field(..., description="Path to file")
+    title: str = Field(..., min_length=1, max_length=200)
+    category: str = Field(..., description="Document category")
+    tags: List[str] = Field(default_factory=list)
+    priority: int = Field(default=0, ge=0, le=10)
+    author: Optional[str] = None
+
+    @validator('file_path')
+    def file_must_exist(cls, v):
+        """Validate file exists"""
+        if not Path(v).exists():
+            raise ValueError(f"File not found: {v}")
+        return v
+
+    @validator('file_path')
+    def file_size_check(cls, v):
+        """Check file size"""
+        size = Path(v).stat().st_size
+        max_size = 5 * 1024 * 1024  # 5MB
+
+        if size > max_size:
+            raise ValueError(f"File too large: {size / 1024 / 1024:.1f}MB (max 5MB)")
+
+        return v
+
+    def upload(self, trainly_client: TrainlyClient):
+        """Execute validated upload"""
+        with open(self.file_path, "rb") as file:
+            return trainly_client.upload_file(
+                file=file,
+                filename=Path(self.file_path).name,
+                scope_values={
+                    "title": self.title,
+                    "category": self.category,
+                    "tags": ",".join(self.tags),
+                    "priority": self.priority,
+                    "author": self.author or "unknown"
+                }
+            )
+
+# Usage with validation
+try:
+    upload = DocumentUpload(
+        file_path="./research.pdf",
+        title="AI Research 2024",
+        category="research",
+        tags=["ai", "ml", "nlp"],
+        priority=8,
+        author="Dr. Smith"
+    )
+
+    result = upload.upload(trainly)
+    print(f"✓ Uploaded: {result.filename}")
+
+except ValidationError as e:
+    print(f"Validation error: {e}")
+```
+
+### Query Builder Pattern
+
+```python
+from dataclasses import dataclass, field
+from typing import Dict, Optional
+
+@dataclass
+class QueryBuilder:
+    """Fluent API for building queries"""
+
+    _question: str = ""
+    _model: str = "gpt-4o-mini"
+    _temperature: float = 0.7
+    _max_tokens: int = 1000
+    _custom_prompt: Optional[str] = None
+    _scope_filters: Dict = field(default_factory=dict)
+
+    def ask(self, question: str) -> 'QueryBuilder':
+        """Set the question"""
+        self._question = question
+        return self
+
+    def with_model(self, model: str) -> 'QueryBuilder':
+        """Set the AI model"""
+        self._model = model
+        return self
+
+    def with_temperature(self, temperature: float) -> 'QueryBuilder':
+        """Set temperature"""
+        self._temperature = temperature
+        return self
+
+    def with_max_tokens(self, max_tokens: int) -> 'QueryBuilder':
+        """Set max tokens"""
+        self._max_tokens = max_tokens
+        return self
+
+    def with_prompt(self, prompt: str) -> 'QueryBuilder':
+        """Set custom prompt"""
+        self._custom_prompt = prompt
+        return self
+
+    def filter_by(self, **filters) -> 'QueryBuilder':
+        """Add scope filters"""
+        self._scope_filters.update(filters)
+        return self
+
+    def execute(self, trainly_client: TrainlyClient):
+        """Execute the query"""
+        if not self._question:
+            raise ValueError("Question is required")
+
+        return trainly_client.query(
+            question=self._question,
+            model=self._model,
+            temperature=self._temperature,
+            max_tokens=self._max_tokens,
+            custom_prompt=self._custom_prompt,
+            scope_filters=self._scope_filters if self._scope_filters else None
+        )
+
+# Usage with fluent API
+response = (QueryBuilder()
+    .ask("What is the methodology?")
+    .with_model("gpt-4o")
+    .with_temperature(0.3)
+    .with_max_tokens(2000)
+    .filter_by(category="research", version="2.0")
+    .execute(trainly))
+
+print(response.answer)
+```
+
+### Batch Processing with Queue
+
+```python
+from queue import Queue
+from threading import Thread, Event
+from typing import Callable
+import time
+
+class TrainlyBatchProcessor:
+    """Process queries in batches with worker threads"""
+
+    def __init__(
+        self,
+        trainly_client: TrainlyClient,
+        num_workers: int = 3,
+        batch_delay: float = 0.5
+    ):
+        self.trainly = trainly_client
+        self.num_workers = num_workers
+        self.batch_delay = batch_delay
+
+        self.queue = Queue()
+        self.results = {}
+        self.stop_event = Event()
+        self.workers = []
+
+        self._start_workers()
+
+    def _start_workers(self):
+        """Start worker threads"""
+        for i in range(self.num_workers):
+            worker = Thread(target=self._worker, args=(i,), daemon=True)
+            worker.start()
+            self.workers.append(worker)
+
+    def _worker(self, worker_id: int):
+        """Worker thread function"""
+        while not self.stop_event.is_set():
+            try:
+                # Get task from queue (with timeout)
+                task = self.queue.get(timeout=1)
+
+                if task is None:
+                    break
+
+                task_id, question, callback = task
+
+                # Execute query
+                try:
+                    response = self.trainly.query(question=question)
+                    self.results[task_id] = {
+                        "success": True,
+                        "response": response
+                    }
+
+                    if callback:
+                        callback(response, None)
+
+                except Exception as e:
+                    self.results[task_id] = {
+                        "success": False,
+                        "error": str(e)
+                    }
+
+                    if callback:
+                        callback(None, e)
+
+                finally:
+                    self.queue.task_done()
+
+                    # Rate limiting delay
+                    time.sleep(self.batch_delay)
+
+            except Queue.Empty:
+                continue
+
+    def submit(
+        self,
+        question: str,
+        callback: Callable = None
+    ) -> str:
+        """Submit a query for processing"""
+        task_id = f"task_{int(time.time() * 1000)}"
+        self.queue.put((task_id, question, callback))
+        return task_id
+
+    def wait(self):
+        """Wait for all tasks to complete"""
+        self.queue.join()
+
+    def shutdown(self):
+        """Shutdown the processor"""
+        self.stop_event.set()
+
+        # Signal workers to stop
+        for _ in self.workers:
+            self.queue.put(None)
+
+        # Wait for workers
+        for worker in self.workers:
+            worker.join()
+
+        print(f"Processor shutdown. Processed {len(self.results)} queries.")
+
+# Usage
+processor = TrainlyBatchProcessor(
+    trainly,
+    num_workers=3,
+    batch_delay=0.5
+)
+
+def handle_result(response, error):
+    """Callback for results"""
+    if error:
+        print(f"Error: {error}")
+    else:
+        print(f"Answer: {response.answer[:100]}...")
+
+# Submit multiple queries
+questions = [
+    "What is AI?",
+    "What is machine learning?",
+    "What is deep learning?",
+    "What is NLP?",
+    "What is computer vision?"
+]
+
+for question in questions:
+    processor.submit(question, callback=handle_result)
+
+# Wait for completion
+processor.wait()
+processor.shutdown()
+```
+
+### Protocol Pattern for Extensibility
+
+```python
+from typing import Protocol, runtime_checkable
+from abc import abstractmethod
+
+@runtime_checkable
+class FileUploader(Protocol):
+    """Protocol for file upload implementations"""
+
+    @abstractmethod
+    def upload(self, file, filename: str, **kwargs):
+        """Upload a file"""
+        pass
+
+class TrainlyUploader:
+    """Trainly implementation of FileUploader"""
+
+    def __init__(self, trainly_client: TrainlyClient):
+        self.trainly = trainly_client
+
+    def upload(self, file, filename: str, **kwargs):
+        return self.trainly.upload_file(
+            file=file,
+            filename=filename,
+            **kwargs
+        )
+
+class MockUploader:
+    """Mock uploader for testing"""
+
+    def upload(self, file, filename: str, **kwargs):
+        print(f"Mock upload: {filename}")
+        return {"filename": filename, "success": True}
+
+def process_documents(
+    files: list,
+    uploader: FileUploader  # Any class that implements the protocol
+):
+    """Process documents with any uploader implementation"""
+
+    results = []
+    for file_path in files:
+        with open(file_path, "rb") as file:
+            result = uploader.upload(
+                file=file,
+                filename=Path(file_path).name
+            )
+        results.append(result)
+
+    return results
+
+# Usage with Trainly
+trainly_uploader = TrainlyUploader(trainly)
+results = process_documents(["./doc1.pdf", "./doc2.pdf"], trainly_uploader)
+
+# Usage with mock (for testing)
+mock_uploader = MockUploader()
+results = process_documents(["./doc1.pdf", "./doc2.pdf"], mock_uploader)
 ```
 
 ## Error Handling
