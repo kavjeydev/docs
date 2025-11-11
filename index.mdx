@@ -1,97 +1,512 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "Welcome to Trainly"
+description: "Build intelligent applications with privacy-first GraphRAG"
 ---
 
-## Setting up
+<img
+  className="block dark:hidden"
+  src="/images/hero-light.png"
+  alt="Trainly Hero Light"
+/>
+<img
+  className="hidden dark:block"
+  src="/images/hero-dark.png"
+  alt="Trainly Hero Dark"
+/>
 
-Get your documentation site up and running in minutes.
+## What is Trainly?
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+Trainly is a **GraphRAG (Graph Retrieval-Augmented Generation)** platform that enables you to build intelligent applications powered by your own documents. Upload files, and Trainly creates a searchable knowledge graph that AI models can query with accurate, citation-backed answers.
 
-## Make it yours
+<Note>
+  **Privacy-First Architecture**: User data is completely isolated. Developers get AI responses only—never raw files or documents.
+</Note>
 
-Design a docs site that looks great and empowers your users.
+## Key Features
 
-<Columns cols={2}>
+<CardGroup cols={2}>
+  <Card title="Intelligent Search" icon="magnifying-glass">
+    Semantic search powered by vector embeddings finds relevant content even when keywords don't match exactly
+  </Card>
+  <Card title="Multiple AI Models" icon="brain">
+    Choose from GPT-4, Claude, Gemini, and more. Switch models per query for optimal cost and quality
+  </Card>
+  <Card title="Citation-Backed Answers" icon="quote-left">
+    Every answer includes citations showing which documents were used, with relevance scores
+  </Card>
+  <Card title="Document Processing" icon="file-lines">
+    Automatically process PDFs, DOCX, TXT, code files, and more into searchable chunks
+  </Card>
+  <Card title="Graph Relationships" icon="diagram-project">
+    AI analyzes content to create intelligent relationships between chunks for better context
+  </Card>
+  <Card title="Privacy & Security" icon="shield-halved">
+    User data isolation, XSS protection, audit logging, and GDPR/CCPA compliance built-in
+  </Card>
+</CardGroup>
+
+## Quick Start
+
+Get up and running in 3 minutes:
+
+<Steps>
+  <Step title="Create an Account">
+    Sign up at [trainlyai.com](https://trainlyai.com) and create your first chat
+  </Step>
+  <Step title="Upload Documents">
+    Upload PDFs, documents, or text files to build your knowledge base
+  </Step>
+  <Step title="Get API Access">
+    Enable API access in settings, publish your chat, and generate an API key
+  </Step>
+  <Step title="Start Building">
+    Use our SDKs or REST API to integrate Trainly into your application
+  </Step>
+</Steps>
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://api.trainlyai.com/v1/chat_abc123/answer_question \
+  -H "Authorization: Bearer tk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What are the main findings?"}'
+```
+
+```javascript JavaScript
+import { TrainlyClient } from "@trainly/react";
+
+const trainly = new TrainlyClient({
+  apiKey: "tk_your_api_key",
+  chatId: "chat_abc123"
+});
+
+const response = await trainly.query({
+  question: "What are the main findings?"
+});
+
+console.log(response.answer);
+```
+
+```python Python
+from trainly import TrainlyClient
+
+trainly = TrainlyClient(
+    api_key="tk_your_api_key",
+    chat_id="chat_abc123"
+)
+
+response = trainly.query(
+    question="What are the main findings?"
+)
+
+print(response.answer)
+```
+
+</CodeGroup>
+
+## Popular Use Cases
+
+<AccordionGroup>
+  <Accordion title="Customer Support Automation">
+    Build AI-powered support bots that answer customer questions based on your help documentation, reducing support ticket volume by up to 70%.
+  </Accordion>
+
+  <Accordion title="Research & Analysis">
+    Query academic papers, research documents, and datasets. Perfect for literature reviews, competitive analysis, and market research.
+  </Accordion>
+
+  <Accordion title="Legal Document Review">
+    Analyze contracts, agreements, and legal documents. Extract obligations, find clauses, and check compliance automatically.
+  </Accordion>
+
+  <Accordion title="Internal Knowledge Base">
+    Give your team instant access to company documentation, policies, and internal resources with natural language search.
+  </Accordion>
+
+  <Accordion title="Educational Platforms">
+    Create personalized learning assistants that help students understand course materials, generate quizzes, and provide explanations.
+  </Accordion>
+
+  <Accordion title="Content Discovery">
+    Build smart content recommendation engines for media platforms, e-commerce, or content libraries.
+  </Accordion>
+</AccordionGroup>
+
+## Getting Started Guides
+
+<CardGroup cols={2}>
   <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
+    title="SDK Quick Start"
+    icon="bolt"
+    href="/sdk-quickstart"
   >
-    Edit your docs locally and preview them in real time.
+    Get started with JavaScript or Python SDKs in 5 minutes
   </Card>
   <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
-  </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
-  </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
+    title="API Reference"
+    icon="book-open"
     href="/api-reference/introduction"
   >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
-
-## Create beautiful pages
-
-Everything you need to create world-class documentation.
-
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
+    Complete REST API documentation with examples
   </Card>
   <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
+    title="Authentication Guide"
+    icon="key"
+    href="/authentication-guide"
   >
-    Add sample code to demonstrate how to use your product.
+    Learn about API keys, OAuth, and V1 authentication
   </Card>
   <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
+    title="Integration Examples"
+    icon="puzzle-piece"
+    href="/integration-examples"
   >
-    Display images and other media.
+    Real-world examples for web apps, bots, and services
   </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+</CardGroup>
 
-## Need inspiration?
+## Popular Integrations
+
+<Tabs>
+  <Tab title="Web Applications">
+    Perfect for React, Next.js, Vue, or any modern web framework:
+
+    - Real-time streaming responses
+    - File upload with drag & drop
+    - Citation-backed answers
+    - Responsive chat interfaces
+
+    [View Web Examples →](/integration-examples#complete-web-application)
+  </Tab>
+
+  <Tab title="Backend Services">
+    Integrate into your APIs and microservices:
+
+    - Express.js, Flask, FastAPI, Django
+    - Async/concurrent processing
+    - Queue-based batch operations
+    - Multi-tenant data isolation
+
+    [View Backend Examples →](/integration-examples#api-wrapper-service)
+  </Tab>
+
+  <Tab title="Chat Bots">
+    Build intelligent bots for Slack, Discord, or custom platforms:
+
+    - Automatic document indexing
+    - Natural language queries
+    - Context-aware responses
+    - Team knowledge sharing
+
+    [View Bot Examples →](/integration-examples#slack-bot-integration)
+  </Tab>
+
+  <Tab title="Data Processing">
+    Process and analyze documents at scale:
+
+    - Batch processing pipelines
+    - Parallel uploads
+    - Metadata extraction
+    - Analytics dashboards
+
+    [View Processing Examples →](/python-sdk#batch-processing-script)
+  </Tab>
+</Tabs>
+
+## Core Capabilities
+
+### Intelligent Document Processing
+
+Trainly automatically:
+1. **Extracts text** from PDFs, DOCX, and other formats
+2. **Creates chunks** with optimal size for semantic search
+3. **Generates embeddings** using OpenAI's latest models
+4. **Builds relationships** between related content using AI
+5. **Indexes everything** in a graph database for fast retrieval
+
+### Advanced Features
+
+<CardGroup cols={3}>
+  <Card title="Scope Filtering" icon="filter">
+    Segment data by workspace, project, or any custom attribute
+  </Card>
+  <Card title="Custom Models" icon="sliders">
+    Choose from GPT-4, Claude, Gemini with per-query selection
+  </Card>
+  <Card title="Streaming" icon="satellite-dish">
+    Real-time streaming responses for better UX
+  </Card>
+  <Card title="Citation Tracking" icon="bookmark">
+    Every answer includes sources with relevance scores
+  </Card>
+  <Card title="Multi-Tenant" icon="users">
+    Built-in support for multi-tenant applications
+  </Card>
+  <Card title="Analytics" icon="chart-line">
+    Track usage, costs, and performance metrics
+  </Card>
+</CardGroup>
+
+## Why Choose Trainly?
+
+<AccordionGroup>
+  <Accordion title="🔒 Privacy-First Architecture">
+    - User data stored in isolated subchats
+    - Developers never see raw files
+    - Citations filtered based on access level
+    - GDPR/CCPA compliant by design
+    - Complete audit trails
+  </Accordion>
+
+  <Accordion title="⚡ Production-Ready Performance">
+    - Sub-second query responses
+    - Streaming for instant feedback
+    - Automatic retry logic
+    - Rate limiting built-in
+    - 99.9% uptime SLA
+  </Accordion>
+
+  <Accordion title="🧠 Intelligent Context">
+    - AI-powered chunk relationships
+    - Semantic search with embeddings
+    - Filename-aware relevance boosting
+    - Graph-based context traversal
+    - Customizable system prompts
+  </Accordion>
+
+  <Accordion title="💰 Transparent Pricing">
+    - Pay only for AI model usage
+    - No hidden fees
+    - Free storage & uploads
+    - Start with 1,000 free credits
+    - Credits never expire
+  </Accordion>
+
+  <Accordion title="🛠️ Developer-Friendly">
+    - Official SDKs for JavaScript & Python
+    - TypeScript types & Python type hints
+    - Comprehensive documentation
+    - Real-world examples
+    - Active community support
+  </Accordion>
+</AccordionGroup>
+
+## Example: Building a Document Q&A System
+
+Here's a complete example in under 50 lines:
+
+<CodeGroup>
+
+```typescript Next.js
+// app/api/query/route.ts
+import { TrainlyClient } from "@trainly/react";
+import { NextResponse } from "next/server";
+
+const trainly = new TrainlyClient({
+  apiKey: process.env.TRAINLY_API_KEY!,
+  chatId: process.env.TRAINLY_CHAT_ID!,
+});
+
+export async function POST(request: Request) {
+  const { question } = await request.json();
+
+  const response = await trainly.query({
+    question,
+    model: "gpt-4o-mini",
+  });
+
+  return NextResponse.json({
+    answer: response.answer,
+    citations: response.context.slice(0, 5),
+  });
+}
+```
+
+```python FastAPI
+from fastapi import FastAPI, HTTPException
+from trainly import TrainlyClient
+from pydantic import BaseModel
+
+app = FastAPI()
+
+trainly = TrainlyClient(
+    api_key=os.getenv("TRAINLY_API_KEY"),
+    chat_id=os.getenv("TRAINLY_CHAT_ID")
+)
+
+class QueryRequest(BaseModel):
+    question: str
+
+@app.post("/query")
+async def query_documents(request: QueryRequest):
+    try:
+        response = trainly.query(
+            question=request.question,
+            model="gpt-4o-mini"
+        )
+
+        return {
+            "answer": response.answer,
+            "citations": response.context[:5]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+```
+
+```javascript React
+import { useState } from 'react';
+import { TrainlyClient } from '@trainly/react';
+
+function DocumentChat() {
+  const [answer, setAnswer] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function handleQuery(question) {
+    setLoading(true);
+
+    const response = await fetch('/api/query', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question })
+    });
+
+    const data = await response.json();
+    setAnswer(data.answer);
+    setLoading(false);
+  }
+
+  return (
+    <div>
+      <input
+        onKeyPress={(e) => e.key === 'Enter' && handleQuery(e.target.value)}
+        placeholder="Ask a question..."
+      />
+      {loading && <div>Loading...</div>}
+      {answer && <div>{answer}</div>}
+    </div>
+  );
+}
+```
+
+</CodeGroup>
+
+## Explore by Category
+
+<CardGroup cols={2}>
+  <Card
+    title="JavaScript SDK"
+    icon="js"
+    href="/javascript-sdk"
+  >
+    Complete guide with TypeScript support, streaming, error handling, and framework integration
+  </Card>
+  <Card
+    title="Python SDK"
+    icon="python"
+    href="/python-sdk"
+  >
+    Comprehensive Python guide with async support, type hints, and 20+ file upload patterns
+  </Card>
+  <Card
+    title="V1 Authentication"
+    icon="shield-check"
+    href="/api-reference/v1-authentication"
+  >
+    OAuth-based authentication with complete user data isolation
+  </Card>
+  <Card
+    title="File Management"
+    icon="folder-open"
+    href="/api-reference/file-management"
+  >
+    Upload, process, and manage documents with automatic embeddings
+  </Card>
+  <Card
+    title="Streaming & Real-Time"
+    icon="bolt"
+    href="/streaming-and-realtime"
+  >
+    Build responsive UIs with Server-Sent Events streaming
+  </Card>
+  <Card
+    title="Credits & Pricing"
+    icon="coins"
+    href="/credits-and-pricing"
+  >
+    Understand the credit system and optimize your costs
+  </Card>
+</CardGroup>
+
+## Community & Support
 
 <Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
+  title="Join our Community"
+  icon="discord"
+  href="https://discord.gg/trainly"
+  horizontal
 >
-  Browse our showcase of exceptional documentation sites.
+  Get help, share ideas, and connect with other developers building on Trainly
 </Card>
+
+<CardGroup cols={3}>
+  <Card title="GitHub" icon="github" href="https://github.com/trainly">
+    View source code and SDKs
+  </Card>
+  <Card title="Support" icon="life-ring" href="mailto:support@trainlyai.com">
+    Email our support team
+  </Card>
+  <Card title="Dashboard" icon="chart-line" href="https://trainlyai.com/dashboard">
+    Manage your chats and usage
+  </Card>
+</CardGroup>
+
+## Trusted by Developers
+
+<Note>
+  Trainly powers document Q&A, customer support, research tools, and knowledge bases for teams of all sizes.
+</Note>
+
+### What You Can Build
+
+- 🤖 **AI Chatbots** - Support bots, internal assistants, Q&A systems
+- 📚 **Knowledge Bases** - Searchable company documentation and wikis
+- 🔍 **Research Tools** - Academic paper analysis and literature reviews
+- 📄 **Document Analysis** - Contract review, compliance checking, extraction
+- 🎓 **Learning Platforms** - Personalized study assistants and tutoring
+- 🛍️ **Product Discovery** - Smart search and recommendations
+- 📊 **Analytics Dashboards** - Insights from document collections
+- 💬 **Community Bots** - Discord, Slack, and Telegram integrations
+
+## Start Building Today
+
+<CardGroup cols={2}>
+  <Card
+    title="5-Minute Quickstart"
+    icon="rocket"
+    href="/sdk-quickstart"
+  >
+    Install the SDK and make your first query in 5 minutes
+  </Card>
+  <Card
+    title="API Reference"
+    icon="book"
+    href="/api-reference/introduction"
+  >
+    Explore the complete API documentation
+  </Card>
+  <Card
+    title="Integration Examples"
+    icon="code"
+    href="/integration-examples"
+  >
+    View 10+ real-world integration examples
+  </Card>
+  <Card
+    title="Best Practices"
+    icon="star"
+    href="/best-practices"
+  >
+    Production deployment and optimization tips
+  </Card>
+</CardGroup>

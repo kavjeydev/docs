@@ -1,94 +1,792 @@
 ---
-title: 'Development'
-description: 'Preview changes locally to update your docs'
+title: "Development Setup"
+description: "Set up your local development environment for Trainly"
 ---
 
+## Development Environment
+
+Get your development environment ready to build with Trainly's API and SDKs.
+
 <Info>
-  **Prerequisites**:
-  - Node.js version 19 or higher
-  - A docs repository with a `docs.json` file
+  **Prerequisites:**
+  - Node.js 18+ or Python 3.8+ (depending on your stack)
+  - A Trainly account with an active chat
+  - API key and chat ID from your Trainly dashboard
 </Info>
 
-Follow these steps to install and run Mintlify on your operating system.
+## Environment Setup
+
+### JavaScript/TypeScript Projects
 
 <Steps>
-<Step title="Install the Mintlify CLI">
+  <Step title="Install the SDK">
+    ```bash
+    npm install @trainly/react
+    # or
+    yarn add @trainly/react
+    # or
+    pnpm add @trainly/react
+    ```
+  </Step>
 
-```bash
-npm i -g mint
-```
-</Step>
+  <Step title="Create Environment File">
+    Create a `.env.local` file in your project root:
 
-<Step title="Preview locally">
+    ```bash
+    TRAINLY_API_KEY=tk_your_api_key_here
+    TRAINLY_CHAT_ID=chat_abc123
+    ```
 
-Navigate to your docs directory where your `docs.json` file is located, and run the following command:
+    <Warning>Add `.env.local` to your `.gitignore` to keep credentials secure!</Warning>
+  </Step>
 
-```bash
-mint dev
-```
+  <Step title="Initialize the Client">
+    ```typescript
+    import { TrainlyClient } from "@trainly/react";
 
-A local preview of your documentation will be available at `http://localhost:3000`.
+    const trainly = new TrainlyClient({
+      apiKey: process.env.TRAINLY_API_KEY!,
+      chatId: process.env.TRAINLY_CHAT_ID!
+    });
+    ```
+  </Step>
 
-</Step>
+  <Step title="Test Your Setup">
+    ```typescript
+    const response = await trainly.query({
+      question: "Test query - what documents do I have?"
+    });
+
+    console.log("✓ Setup successful!", response.answer);
+    ```
+  </Step>
 </Steps>
 
-## Custom ports
+### Python Projects
 
-By default, Mintlify uses port 3000. You can customize the port Mintlify runs on by using the `--port` flag. For example, to run Mintlify on port 3333, use this command:
+<Steps>
+  <Step title="Create Virtual Environment">
+    ```bash
+    python -m venv venv
+    source venv/bin/activate  # On Windows: venv\Scripts\activate
+    ```
+  </Step>
 
-```bash
-mint dev --port 3333
+  <Step title="Install the SDK">
+    ```bash
+    pip install trainly
+    ```
+  </Step>
+
+  <Step title="Create Environment File">
+    Create a `.env` file in your project root:
+
+    ```bash
+    TRAINLY_API_KEY=tk_your_api_key_here
+    TRAINLY_CHAT_ID=chat_abc123
+    ```
+
+    Install python-dotenv:
+    ```bash
+    pip install python-dotenv
+    ```
+  </Step>
+
+  <Step title="Initialize the Client">
+    ```python
+    from trainly import TrainlyClient
+    from dotenv import load_dotenv
+    import os
+
+    load_dotenv()
+
+    trainly = TrainlyClient(
+        api_key=os.getenv("TRAINLY_API_KEY"),
+        chat_id=os.getenv("TRAINLY_CHAT_ID")
+    )
+    ```
+  </Step>
+
+  <Step title="Test Your Setup">
+    ```python
+    response = trainly.query(
+        question="Test query - what documents do I have?"
+    )
+
+    print("✓ Setup successful!", response.answer)
+    ```
+  </Step>
+</Steps>
+
+## Project Structure
+
+### Recommended Structure for Web Apps
+
+```
+my-trainly-app/
+├── .env.local              # Environment variables (gitignored)
+├── package.json            # Dependencies
+├── src/
+│   ├── lib/
+│   │   └── trainly.ts     # Trainly client instance
+│   ├── components/
+│   │   ├── Chat.tsx       # Chat interface
+│   │   └── FileUpload.tsx # File upload component
+│   └── app/
+│       ├── api/
+│       │   ├── query/
+│       │   │   └── route.ts  # Query endpoint
+│       │   └── upload/
+│       │       └── route.ts  # Upload endpoint
+│       └── page.tsx       # Main page
+└── .gitignore             # Include .env.local here!
 ```
 
-If you attempt to run Mintlify on a port that's already in use, it will use the next available port:
+### Recommended Structure for Python Apps
 
-```md
-Port 3000 is already in use. Trying 3001 instead.
+```
+my-trainly-app/
+├── .env                   # Environment variables (gitignored)
+├── requirements.txt       # Dependencies
+├── src/
+│   ├── trainly_client.py # Trainly client singleton
+│   ├── api/
+│   │   ├── __init__.py
+│   │   ├── query.py      # Query endpoints
+│   │   └── upload.py     # Upload endpoints
+│   └── main.py           # Application entry
+├── tests/
+│   └── test_trainly.py   # Unit tests
+└── .gitignore            # Include .env here!
 ```
 
-## Mintlify versions
+## Configuration Best Practices
 
-Please note that each CLI release is associated with a specific version of Mintlify. If your local preview does not align with the production version, please update the CLI:
+### Separate Environments
 
-```bash
-npm mint update
+Use different credentials for development and production:
+
+<CodeGroup>
+
+```bash .env.development
+# Development environment
+TRAINLY_API_KEY=tk_dev_key_123
+TRAINLY_CHAT_ID=chat_dev_abc123
+TRAINLY_BASE_URL=https://api.trainlyai.com
 ```
 
-## Validating links
+```bash .env.production
+# Production environment
+TRAINLY_API_KEY=tk_prod_key_456
+TRAINLY_CHAT_ID=chat_prod_xyz789
+TRAINLY_BASE_URL=https://api.trainlyai.com
+```
 
-The CLI can assist with validating links in your documentation. To identify any broken links, use the following command:
+</CodeGroup>
+
+### Config File Pattern
+
+```typescript
+// config/trainly.ts
+const getTrainlyConfig = () => {
+  const env = process.env.NODE_ENV || 'development';
+
+  const configs = {
+    development: {
+      apiKey: process.env.TRAINLY_DEV_API_KEY!,
+      chatId: process.env.TRAINLY_DEV_CHAT_ID!,
+      debug: true
+    },
+    production: {
+      apiKey: process.env.TRAINLY_PROD_API_KEY!,
+      chatId: process.env.TRAINLY_PROD_CHAT_ID!,
+      debug: false,
+      maxRetries: 3
+    }
+  };
+
+  return configs[env];
+};
+
+export const trainlyConfig = getTrainlyConfig();
+```
+
+## Local Testing
+
+### Test Script (JavaScript)
+
+```javascript
+// test-trainly.js
+import { TrainlyClient } from "@trainly/react";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+async function testSetup() {
+  console.log("Testing Trainly setup...\n");
+
+  const trainly = new TrainlyClient({
+    apiKey: process.env.TRAINLY_API_KEY,
+    chatId: process.env.TRAINLY_CHAT_ID
+  });
+
+  try {
+    // Test 1: Basic query
+    console.log("Test 1: Basic query");
+    const response = await trainly.query({
+      question: "Hello, this is a test query"
+    });
+    console.log("✓ Query successful");
+    console.log(`  Answer length: ${response.answer.length} chars`);
+    console.log(`  Citations: ${response.context.length}`);
+    console.log(`  Tokens used: ${response.usage.total_tokens}\n`);
+
+    // Test 2: List files
+    console.log("Test 2: List files");
+    const files = await trainly.listFiles();
+    console.log(`✓ Found ${files.total_files} files`);
+    console.log(`  Total size: ${formatBytes(files.total_size_bytes)}\n`);
+
+    // Test 3: Streaming
+    console.log("Test 3: Streaming");
+    let chunkCount = 0;
+    const stream = await trainly.queryStream({
+      question: "Brief test"
+    });
+
+    for await (const chunk of stream) {
+      if (chunk.type === 'content') {
+        chunkCount++;
+      }
+    }
+    console.log(`✓ Streaming works (${chunkCount} chunks received)\n`);
+
+    console.log("✅ All tests passed! Your setup is ready.");
+
+  } catch (error) {
+    console.error("❌ Test failed:", error.message);
+    console.error("\nPlease check:");
+    console.error("  - API key is valid (starts with tk_)");
+    console.error("  - Chat ID is correct");
+    console.error("  - API access is enabled in chat settings");
+    console.error("  - Chat settings are published");
+    process.exit(1);
+  }
+}
+
+function formatBytes(bytes) {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+}
+
+testSetup();
+```
+
+Run the test:
+```bash
+node test-trainly.js
+```
+
+### Test Script (Python)
+
+```python
+#!/usr/bin/env python3
+# test_trainly.py
+
+from trainly import TrainlyClient
+from dotenv import load_dotenv
+import os
+import sys
+
+load_dotenv()
+
+def format_bytes(bytes):
+    if bytes == 0:
+        return "0 B"
+    sizes = ["B", "KB", "MB", "GB"]
+    i = 0
+    while bytes >= 1024 and i < len(sizes) - 1:
+        bytes /= 1024
+        i += 1
+    return f"{bytes:.1f} {sizes[i]}"
+
+def test_setup():
+    print("Testing Trainly setup...\n")
+
+    trainly = TrainlyClient(
+        api_key=os.getenv("TRAINLY_API_KEY"),
+        chat_id=os.getenv("TRAINLY_CHAT_ID")
+    )
+
+    try:
+        # Test 1: Basic query
+        print("Test 1: Basic query")
+        response = trainly.query(
+            question="Hello, this is a test query"
+        )
+        print("✓ Query successful")
+        print(f"  Answer length: {len(response.answer)} chars")
+        print(f"  Citations: {len(response.context)}")
+        print(f"  Tokens used: {response.usage.total_tokens}\n")
+
+        # Test 2: List files
+        print("Test 2: List files")
+        files = trainly.list_files()
+        print(f"✓ Found {files.total_files} files")
+        print(f"  Total size: {format_bytes(files.total_size_bytes)}\n")
+
+        # Test 3: Streaming
+        print("Test 3: Streaming")
+        chunk_count = 0
+        for chunk in trainly.query_stream(question="Brief test"):
+            if chunk.type == "content":
+                chunk_count += 1
+
+        print(f"✓ Streaming works ({chunk_count} chunks received)\n")
+
+        print("✅ All tests passed! Your setup is ready.")
+
+    except Exception as e:
+        print(f"❌ Test failed: {e}\n")
+        print("Please check:")
+        print("  - API key is valid (starts with tk_)")
+        print("  - Chat ID is correct")
+        print("  - API access is enabled in chat settings")
+        print("  - Chat settings are published")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    test_setup()
+```
+
+Run the test:
+```bash
+python test_trainly.py
+```
+
+## Development Tools
+
+### VS Code Extensions
+
+Recommended extensions for Trainly development:
+
+- **Thunder Client** - Test API endpoints directly in VS Code
+- **REST Client** - HTTP requests in `.http` files
+- **Better Comments** - Highlight TODO, FIXME, etc.
+- **Error Lens** - Inline error messages
+- **GitLens** - Git integration
+
+### HTTP Client Testing
+
+Create a `trainly.http` file for quick API testing:
+
+```http
+### Variables
+@baseUrl = https://api.trainlyai.com
+@apiKey = {{$dotenv TRAINLY_API_KEY}}
+@chatId = {{$dotenv TRAINLY_CHAT_ID}}
+
+### Test Query
+POST {{baseUrl}}/v1/{{chatId}}/answer_question
+Authorization: Bearer {{apiKey}}
+Content-Type: application/json
+
+{
+  "question": "What are the main findings?"
+}
+
+### Test Health
+GET {{baseUrl}}/v1/health
+
+### List Files (V1 Auth)
+GET {{baseUrl}}/v1/me/chats/files
+Authorization: Bearer {{$dotenv USER_OAUTH_TOKEN}}
+X-App-ID: {{$dotenv TRAINLY_APP_ID}}
+```
+
+## Debugging
+
+### Enable Debug Mode
+
+<CodeGroup>
+
+```typescript TypeScript
+const trainly = new TrainlyClient({
+  apiKey: process.env.TRAINLY_API_KEY!,
+  chatId: process.env.TRAINLY_CHAT_ID!,
+  debug: true,  // Enable debug logging
+  logger: console
+});
+```
+
+```python Python
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
+
+trainly = TrainlyClient(
+    api_key=os.getenv("TRAINLY_API_KEY"),
+    chat_id=os.getenv("TRAINLY_CHAT_ID"),
+    debug=True
+)
+```
+
+</CodeGroup>
+
+### Common Development Issues
+
+<AccordionGroup>
+  <Accordion title="CORS Errors (Browser)">
+    **Problem:** Getting CORS errors when calling Trainly from the browser
+
+    **Solution:** Never call Trainly API directly from the browser with your API key. Instead:
+    1. Create a server-side API route
+    2. Frontend calls your API route
+    3. Your API route calls Trainly
+
+    ```typescript
+    // ❌ BAD - Browser code
+    const trainly = new TrainlyClient({
+      apiKey: "tk_..." // Exposed to users!
+    });
+
+    // ✅ GOOD - Server code
+    // pages/api/query.ts
+    const trainly = new TrainlyClient({
+      apiKey: process.env.TRAINLY_API_KEY // Secure
+    });
+    ```
+  </Accordion>
+
+  <Accordion title="Module Not Found">
+    **Problem:** `Error: Cannot find module '@trainly/react'`
+
+    **Solution:**
+    ```bash
+    # Clear cache and reinstall
+    rm -rf node_modules package-lock.json
+    npm install
+
+    # Or for Python
+    pip uninstall trainly
+    pip install trainly
+    ```
+  </Accordion>
+
+  <Accordion title="401 Unauthorized">
+    **Problem:** Getting 401 errors on API calls
+
+    **Solution:** Check these in order:
+    1. API key format: should start with `tk_`
+    2. Environment variable is loaded: `console.log(process.env.TRAINLY_API_KEY)`
+    3. API access enabled in Trainly dashboard
+    4. Chat settings are published
+    5. Try regenerating the API key
+  </Accordion>
+
+  <Accordion title="Empty Responses">
+    **Problem:** API returns empty or generic answers
+
+    **Solution:**
+    1. Verify documents are uploaded
+    2. Wait 10-30 seconds after upload for processing
+    3. Check published settings include your documents
+    4. Try a more specific question
+    5. Check scope filters aren't too restrictive
+  </Accordion>
+</AccordionGroup>
+
+## Testing
+
+### Unit Testing Setup
+
+<CodeGroup>
+
+```typescript Vitest (JavaScript)
+// vitest.config.ts
+import { defineConfig } from 'vitest/config';
+
+export default defineConfig({
+  test: {
+    env: {
+      TRAINLY_API_KEY: 'tk_test_key',
+      TRAINLY_CHAT_ID: 'chat_test_123'
+    }
+  }
+});
+
+// __tests__/trainly.test.ts
+import { describe, it, expect, vi } from 'vitest';
+import { TrainlyClient } from '@trainly/react';
+
+describe('Trainly Integration', () => {
+  it('should query successfully', async () => {
+    const trainly = new TrainlyClient({
+      apiKey: 'tk_test_key',
+      chatId: 'chat_test_123'
+    });
+
+    // Mock the API call
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        answer: 'Test answer',
+        context: [],
+        usage: { total_tokens: 100 }
+      })
+    });
+
+    const response = await trainly.query({
+      question: 'Test'
+    });
+
+    expect(response.answer).toBe('Test answer');
+  });
+});
+```
+
+```python Pytest (Python)
+# conftest.py
+import pytest
+from trainly import TrainlyClient
+import os
+
+@pytest.fixture
+def trainly_client():
+    return TrainlyClient(
+        api_key=os.getenv("TRAINLY_TEST_API_KEY"),
+        chat_id=os.getenv("TRAINLY_TEST_CHAT_ID")
+    )
+
+# tests/test_trainly.py
+def test_query(trainly_client):
+    response = trainly_client.query(
+        question="Test query"
+    )
+
+    assert response.answer
+    assert response.usage.total_tokens > 0
+
+def test_list_files(trainly_client):
+    files = trainly_client.list_files()
+
+    assert isinstance(files.total_files, int)
+    assert files.total_files >= 0
+```
+
+</CodeGroup>
+
+### Integration Testing
+
+Create a separate test environment:
 
 ```bash
-mint broken-links
+# .env.test
+TRAINLY_API_KEY=tk_test_key
+TRAINLY_CHAT_ID=chat_test_123
+```
+
+Run tests:
+```bash
+# JavaScript
+npm test
+
+# Python
+pytest tests/
+```
+
+## Docker Development
+
+### Dockerfile
+
+```dockerfile
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy application code
+COPY . .
+
+# Build if needed
+RUN npm run build
+
+# Expose port
+EXPOSE 3000
+
+CMD ["npm", "start"]
+```
+
+### Docker Compose
+
+```yaml
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - TRAINLY_API_KEY=${TRAINLY_API_KEY}
+      - TRAINLY_CHAT_ID=${TRAINLY_CHAT_ID}
+    env_file:
+      - .env.local
+```
+
+Run with:
+```bash
+docker-compose up
+```
+
+## Hot Reload Development
+
+### Next.js
+
+Next.js automatically reloads on changes. No configuration needed!
+
+### Express.js with Nodemon
+
+```json
+// package.json
+{
+  "scripts": {
+    "dev": "nodemon src/server.ts",
+    "start": "node dist/server.js"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0",
+    "ts-node": "^10.9.0"
+  }
+}
+```
+
+### Python with Watchdog
+
+```python
+# dev_server.py
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
+import time
+import subprocess
+import sys
+
+class ReloadHandler(FileSystemEventHandler):
+    def __init__(self):
+        self.process = None
+        self.start_server()
+
+    def on_modified(self, event):
+        if event.src_path.endswith('.py'):
+            print(f"\nReloading due to {event.src_path}...")
+            self.restart_server()
+
+    def start_server(self):
+        self.process = subprocess.Popen([sys.executable, 'app.py'])
+
+    def restart_server(self):
+        if self.process:
+            self.process.terminate()
+            self.process.wait()
+        self.start_server()
+
+if __name__ == "__main__":
+    event_handler = ReloadHandler()
+    observer = Observer()
+    observer.schedule(event_handler, path='.', recursive=True)
+    observer.start()
+
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        observer.stop()
+        event_handler.process.terminate()
+    observer.join()
 ```
 
 ## Deployment
 
-If the deployment is successful, you should see the following:
+### Environment Variables
 
-<Frame>
-  <img src="/images/checks-passed.png" alt="Screenshot of a deployment confirmation message that says All checks have passed." style={{ borderRadius: '0.5rem' }} />
-</Frame>
+Set these in your deployment platform:
 
-## Code formatting
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `TRAINLY_API_KEY` | Your API key | `tk_prod_key_123` |
+| `TRAINLY_CHAT_ID` | Your chat ID | `chat_prod_abc123` |
+| `NODE_ENV` | Environment | `production` |
 
-We suggest using extensions on your IDE to recognize and format MDX. If you're a VSCode user, consider the [MDX VSCode extension](https://marketplace.visualstudio.com/items?itemName=unifiedjs.vscode-mdx) for syntax highlighting, and [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) for code formatting.
+### Vercel
 
-## Troubleshooting
+```bash
+# Set environment variables
+vercel env add TRAINLY_API_KEY
+vercel env add TRAINLY_CHAT_ID
 
-<AccordionGroup>
-  <Accordion title='Error: Could not load the "sharp" module using the darwin-arm64 runtime'>
+# Deploy
+vercel --prod
+```
 
-    This may be due to an outdated version of node. Try the following:
-    1. Remove the currently-installed version of the CLI: `npm remove -g mint`
-    2. Upgrade to Node v19 or higher.
-    3. Reinstall the CLI: `npm i -g mint`
-  </Accordion>
+### Railway
 
-  <Accordion title="Issue: Encountering an unknown error">
-  
-    Solution: Go to the root of your device and delete the `~/.mintlify` folder. Then run `mint dev` again.
-  </Accordion>
-</AccordionGroup>
+```bash
+# Set environment variables
+railway variables set TRAINLY_API_KEY=tk_your_key
+railway variables set TRAINLY_CHAT_ID=chat_your_id
 
-Curious about what changed in the latest CLI version? Check out the [CLI changelog](https://www.npmjs.com/package/mintlify?activeTab=versions).
+# Deploy
+railway up
+```
+
+### Heroku
+
+```bash
+# Set environment variables
+heroku config:set TRAINLY_API_KEY=tk_your_key
+heroku config:set TRAINLY_CHAT_ID=chat_your_id
+
+# Deploy
+git push heroku main
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Build Your First App"
+    icon="rocket"
+    href="/quickstart"
+  >
+    Follow the quickstart guide
+  </Card>
+  <Card
+    title="View Examples"
+    icon="code"
+    href="/integration-examples"
+  >
+    See real-world implementations
+  </Card>
+  <Card
+    title="Best Practices"
+    icon="shield"
+    href="/best-practices"
+  >
+    Security and performance tips
+  </Card>
+  <Card
+    title="Get Support"
+    icon="life-ring"
+    href="https://discord.gg/trainly"
+  >
+    Join our Discord community
+  </Card>
+</CardGroup>

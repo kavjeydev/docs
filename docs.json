@@ -11,6 +11,15 @@
   "navigation": {
     "tabs": [
       {
+        "tab": "Getting Started",
+        "groups": [
+          {
+            "group": "Introduction",
+            "pages": ["index", "quickstart", "development"]
+          }
+        ]
+      },
+      {
         "tab": "API reference",
         "groups": [
           {

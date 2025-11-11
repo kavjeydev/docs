@@ -1,85 +1,508 @@
 ---
-title: "Quickstart Yay"
-description: "Start building awesome documentation in minutes"
+title: "Quickstart"
+description: "Get started with Trainly in 5 minutes"
 ---
 
-## Get started in three steps
+## Build Your First AI-Powered Application
 
-Get your documentation site running locally and make your first customization.
-
-### Step 1: Set up your local environment
-
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
-
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
-
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-
-  </Accordion>
-</AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes. 2. Your docs will update and be live in
-  moments!
-</Accordion>
-
-## Next steps
-
-Now that you have your docs running, explore these key features:
-
-<CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
-</CardGroup>
+This guide will walk you through creating your first Trainly-powered application that can answer questions about your documents.
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join
-  our [community](https://mintlify.com/community).
+  By the end of this guide, you'll have a working document Q&A system with less than 20 lines of code.
 </Note>
+
+## Step 1: Create Your Knowledge Base
+
+<Steps>
+  <Step title="Sign Up">
+    Create a free account at [trainlyai.com](https://trainlyai.com)
+  </Step>
+
+  <Step title="Create a Chat">
+    Click "New Chat" to create your first knowledge base
+  </Step>
+
+  <Step title="Upload Documents">
+    Upload PDFs, DOCX, TXT, or other documents. Trainly will automatically:
+    - Extract text content
+    - Create semantic chunks
+    - Generate embeddings
+    - Build a searchable graph
+  </Step>
+
+  <Step title="Test It">
+    Try asking questions in the chat interface to verify your documents are indexed correctly
+  </Step>
+</Steps>
+
+<Tip>
+  Start with 2-3 documents to get familiar with the system. You can always add more later.
+</Tip>
+
+## Step 2: Enable API Access
+
+<Steps>
+  <Step title="Open Settings">
+    Click the settings icon in your chat
+  </Step>
+
+  <Step title="Configure Your Settings">
+    - Choose your preferred AI model (GPT-4o-mini recommended)
+    - Set temperature and max tokens
+    - Add a custom prompt (optional)
+    - Select which documents to include
+  </Step>
+
+  <Step title="Publish Settings">
+    Click "Publish Settings" - this makes your configuration available to the API
+  </Step>
+
+  <Step title="Enable API Access">
+    Toggle "Enable API Access" and click "Generate API Key"
+  </Step>
+
+  <Step title="Copy Your Credentials">
+    Save your API key (starts with `tk_`) and chat ID
+  </Step>
+</Steps>
+
+<Warning>
+  Keep your API key secret! Store it in environment variables, never commit it to source control.
+</Warning>
+
+## Step 3: Make Your First Query
+
+Choose your preferred language and make your first API call:
+
+<CodeGroup>
+
+```bash cURL
+# Replace with your actual credentials
+export TRAINLY_API_KEY="tk_your_api_key"
+export TRAINLY_CHAT_ID="chat_abc123"
+
+curl -X POST https://api.trainlyai.com/v1/${TRAINLY_CHAT_ID}/answer_question \
+  -H "Authorization: Bearer ${TRAINLY_API_KEY}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "What are the main points in my documents?"
+  }'
+```
+
+```javascript JavaScript
+// 1. Install the SDK
+// npm install @trainly/react
+
+// 2. Create a client
+import { TrainlyClient } from "@trainly/react";
+
+const trainly = new TrainlyClient({
+  apiKey: process.env.TRAINLY_API_KEY,
+  chatId: process.env.TRAINLY_CHAT_ID
+});
+
+// 3. Query your documents
+const response = await trainly.query({
+  question: "What are the main points in my documents?"
+});
+
+console.log("Answer:", response.answer);
+console.log("Citations:", response.context.length);
+```
+
+```python Python
+# 1. Install the SDK
+# pip install trainly
+
+# 2. Create a client
+from trainly import TrainlyClient
+import os
+
+trainly = TrainlyClient(
+    api_key=os.getenv("TRAINLY_API_KEY"),
+    chat_id=os.getenv("TRAINLY_CHAT_ID")
+)
+
+# 3. Query your documents
+response = trainly.query(
+    question="What are the main points in my documents?"
+)
+
+print("Answer:", response.answer)
+print("Citations:", len(response.context))
+```
+
+</CodeGroup>
+
+## Step 4: Add Streaming (Optional)
+
+Make your app more responsive with real-time streaming:
+
+<CodeGroup>
+
+```javascript JavaScript
+// Stream responses in real-time
+for await (const chunk of trainly.queryStream({
+  question: "Explain the methodology in detail"
+})) {
+  if (chunk.type === 'content') {
+    process.stdout.write(chunk.data);
+  } else if (chunk.type === 'end') {
+    console.log('\n\nComplete!');
+  }
+}
+```
+
+```python Python
+# Stream responses in real-time
+for chunk in trainly.query_stream(
+    question="Explain the methodology in detail"
+):
+    if chunk.type == "content":
+        print(chunk.data, end="", flush=True)
+    elif chunk.type == "end":
+        print("\n\nComplete!")
+```
+
+</CodeGroup>
+
+## What You've Built
+
+Congratulations! You now have:
+
+<CardGroup cols={2}>
+  <Card title="Knowledge Base" icon="database">
+    Your documents indexed and searchable via semantic search
+  </Card>
+  <Card title="AI Integration" icon="robot">
+    AI models that can answer questions about your content
+  </Card>
+  <Card title="Citation System" icon="link">
+    Answers backed by source citations with relevance scores
+  </Card>
+  <Card title="API Access" icon="key">
+    Full programmatic access to query your knowledge base
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+Now that you have the basics working, explore more advanced features:
+
+### Enhance Your Application
+
+<CardGroup cols={2}>
+  <Card
+    title="Add File Uploads"
+    icon="upload"
+    href="/python-sdk#upload-files"
+  >
+    Allow users to upload their own documents
+  </Card>
+  <Card
+    title="Implement Streaming"
+    icon="bolt"
+    href="/streaming-and-realtime"
+  >
+    Add real-time streaming for better UX
+  </Card>
+  <Card
+    title="Use Scope Filters"
+    icon="filter"
+    href="/api-reference/scope-management"
+  >
+    Segment data for multi-tenant apps
+  </Card>
+  <Card
+    title="Optimize Costs"
+    icon="dollar-sign"
+    href="/credits-and-pricing"
+  >
+    Choose the right models and cache responses
+  </Card>
+</CardGroup>
+
+### Complete Tutorials
+
+<Tabs>
+  <Tab title="Web App">
+    **Build a Document Chat Interface**
+
+    Create a full-featured chat application with:
+    - Real-time streaming responses
+    - File upload with drag & drop
+    - Citation display
+    - Conversation history
+
+    [View Tutorial →](/integration-examples#complete-web-application)
+  </Tab>
+
+  <Tab title="Support Bot">
+    **Build a Customer Support Bot**
+
+    Create an AI support assistant that:
+    - Answers questions from docs
+    - Routes to human support when needed
+    - Tracks conversation history
+    - Integrates with your helpdesk
+
+    [View Tutorial →](/integration-examples#customer-support-chatbot)
+  </Tab>
+
+  <Tab title="Research Tool">
+    **Build a Research Assistant**
+
+    Analyze academic papers with:
+    - Batch processing
+    - Literature reviews
+    - Citation extraction
+    - Comparative analysis
+
+    [View Tutorial →](/integration-examples#research-paper-analyzer)
+  </Tab>
+
+  <Tab title="Slack Bot">
+    **Build a Team Knowledge Bot**
+
+    Create a Slack bot that:
+    - Answers team questions
+    - Auto-indexes uploaded files
+    - Provides citations
+    - Learns from your docs
+
+    [View Tutorial →](/integration-examples#slack-bot-integration)
+  </Tab>
+</Tabs>
+
+## Common First Steps
+
+### Upload More Documents
+
+<CodeGroup>
+
+```javascript JavaScript
+const result = await trainly.uploadFile({
+  file: './research_paper.pdf',
+  scopeValues: {
+    category: 'research',
+    project_id: 'proj_123'
+  }
+});
+
+console.log('Uploaded:', result.filename);
+```
+
+```python Python
+with open('research_paper.pdf', 'rb') as file:
+    result = trainly.upload_file(
+        file=file,
+        scope_values={
+            'category': 'research',
+            'project_id': 'proj_123'
+        }
+    )
+
+print('Uploaded:', result.filename)
+```
+
+</CodeGroup>
+
+### List Your Files
+
+<CodeGroup>
+
+```javascript JavaScript
+const files = await trainly.listFiles();
+
+console.log(`Total: ${files.total_files} files`);
+files.files.forEach(file => {
+  console.log(`- ${file.filename} (${file.chunk_count} chunks)`);
+});
+```
+
+```python Python
+files = trainly.list_files()
+
+print(f"Total: {files.total_files} files")
+for file in files.files:
+    print(f"- {file.filename} ({file.chunk_count} chunks)")
+```
+
+</CodeGroup>
+
+### Try Different Models
+
+<CodeGroup>
+
+```javascript JavaScript
+// Fast and cheap
+const response1 = await trainly.query({
+  question: "Quick summary?",
+  model: "gpt-4o-mini"  // 1x credits
+});
+
+// High quality
+const response2 = await trainly.query({
+  question: "Detailed analysis?",
+  model: "gpt-4o"  // 15x credits
+});
+```
+
+```python Python
+# Fast and cheap
+response1 = trainly.query(
+    question="Quick summary?",
+    model="gpt-4o-mini"  # 1x credits
+)
+
+# High quality
+response2 = trainly.query(
+    question="Detailed analysis?",
+    model="gpt-4o"  # 15x credits
+)
+```
+
+</CodeGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="API Key Not Working">
+    **Check these:**
+    - API key starts with `tk_`
+    - API access is enabled in chat settings
+    - Chat settings are published
+    - Using correct chat ID
+
+    **Solution:** Go to chat settings → Verify API access is enabled → Regenerate key if needed
+  </Accordion>
+
+  <Accordion title="Empty or Generic Responses">
+    **Possible causes:**
+    - No documents uploaded
+    - Documents not processed yet (takes 10-30 seconds)
+    - Published settings don't include your documents
+    - Question not relevant to your content
+
+    **Solution:** Upload documents → Wait for processing → Publish settings with context files
+  </Accordion>
+
+  <Accordion title="Rate Limit Errors">
+    **Default limits:**
+    - 60 requests/minute per API key
+
+    **Solution:** Implement exponential backoff in your retry logic or upgrade your plan
+  </Accordion>
+
+  <Accordion title="Authentication Errors">
+    **Check:**
+    - API key is valid and not expired
+    - Using correct authorization header format: `Authorization: Bearer tk_your_key`
+    - Chat has API access enabled
+
+    **Solution:** Verify credentials and regenerate API key if needed
+  </Accordion>
+</AccordionGroup>
+
+## Example Projects
+
+Get inspired by complete working examples:
+
+<CardGroup cols={2}>
+  <Card
+    title="Next.js Chat App"
+    icon="react"
+    href="/integration-examples#complete-web-application"
+  >
+    Full-featured document chat with streaming and file upload
+  </Card>
+  <Card
+    title="Python CLI Tool"
+    icon="terminal"
+    href="/python-sdk#document-qa-cli"
+  >
+    Command-line interface for document Q&A
+  </Card>
+  <Card
+    title="Customer Support Bot"
+    icon="headset"
+    href="/integration-examples#customer-support-chatbot"
+  >
+    Automated support system with Flask backend
+  </Card>
+  <Card
+    title="Research Assistant"
+    icon="graduation-cap"
+    href="/integration-examples#research-paper-analyzer"
+  >
+    Academic paper analysis and literature review tool
+  </Card>
+</CardGroup>
+
+## Resources
+
+<CardGroup cols={3}>
+  <Card
+    title="JavaScript SDK"
+    icon="js"
+    href="/javascript-sdk"
+  >
+    Complete JS/TS guide
+  </Card>
+  <Card
+    title="Python SDK"
+    icon="python"
+    href="/python-sdk"
+  >
+    Complete Python guide
+  </Card>
+  <Card
+    title="API Reference"
+    icon="book"
+    href="/api-reference/introduction"
+  >
+    REST API docs
+  </Card>
+  <Card
+    title="Authentication"
+    icon="lock"
+    href="/authentication-guide"
+  >
+    Auth methods
+  </Card>
+  <Card
+    title="Best Practices"
+    icon="star"
+    href="/best-practices"
+  >
+    Production tips
+  </Card>
+  <Card
+    title="Examples"
+    icon="code"
+    href="/integration-examples"
+  >
+    Real-world code
+  </Card>
+</CardGroup>
+
+## Get Help
+
+<Card
+  title="Join the Community"
+  icon="discord"
+  href="https://discord.gg/trainly"
+  horizontal
+>
+  Ask questions, share projects, and get help from the Trainly team and community
+</Card>
+
+**Other Support Channels:**
+- 📧 Email: [support@trainlyai.com](mailto:support@trainlyai.com)
+- 💬 Discord: [Join our server](https://discord.gg/trainly)
+- 🐙 GitHub: [Report issues](https://github.com/trainly/sdk/issues)
+- 📚 Docs: You're already here!
+
+<Tip>
+  **Pro Tip:** Start with `gpt-4o-mini` for development (1x credits), then switch to more powerful models like `gpt-4o` or `claude-3-opus` for production when you need higher quality responses.
+</Tip>
