@@ -131,7 +131,6 @@ def test_query_with_parameters(client: TrainlyClient):
         print_error(f"Query with parameters failed: {e}")
         return False
 
-
 def test_query_without_context(client: TrainlyClient):
     """Test 4: Query without Context"""
     print_test("Query without Context")
