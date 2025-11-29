@@ -57,6 +57,61 @@ trainly = TrainlyClient(
 )
 ```
 
+### Initialization with Environment Variables
+
+Use environment variables for secure credential management:
+
+```python
+from trainly import TrainlyClient
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Get credentials from environment
+api_key = os.getenv("TRAINLY_API_KEY")
+chat_id = os.getenv("TRAINLY_CHAT_ID")
+
+if not api_key or not chat_id:
+    raise ValueError("TRAINLY_API_KEY and TRAINLY_CHAT_ID must be set")
+
+client = TrainlyClient(api_key=api_key, chat_id=chat_id)
+
+print(f"Client initialized with chat_id: {client.chat_id}")
+print(f"Base URL: {client.base_url}")
+print(f"Timeout: {client.timeout}s")
+```
+
+### Initialization with Validation
+
+Validate client initialization:
+
+```python
+from trainly import TrainlyClient
+import os
+
+def initialize_client():
+    """Initialize and validate Trainly client"""
+    api_key = os.getenv("TRAINLY_API_KEY")
+    chat_id = os.getenv("TRAINLY_CHAT_ID")
+
+    if not api_key or not chat_id:
+        raise ValueError("TRAINLY_API_KEY and TRAINLY_CHAT_ID must be set")
+
+    try:
+        client = TrainlyClient(api_key=api_key, chat_id=chat_id)
+        print(f"✓ Client initialized successfully")
+        print(f"  Chat ID: {client.chat_id}")
+        return client
+    except Exception as e:
+        print(f"✗ Initialization failed: {e}")
+        raise
+
+# Usage
+client = initialize_client()
+```
+
 ### Advanced Configuration
 
 ```python
@@ -140,6 +195,45 @@ response = trainly.query(
 print(response.answer)
 ```
 
+### Query Without Context
+
+Sometimes you may want to query without including context chunks in the response. This is useful when you only need the answer:
+
+```python
+from trainly import TrainlyClient
+
+trainly = TrainlyClient(
+    api_key="tk_your_api_key",
+    chat_id="chat_abc123"
+)
+
+# Query without context chunks
+response = trainly.query(
+    question="What are the findings?",
+    include_context=False  # Don't return context chunks
+)
+
+print("Answer:", response.answer)
+print("Context chunks returned:", len(response.context))  # Will be 0
+```
+
+### Query with Custom Parameters
+
+Fine-tune your queries with specific parameters:
+
+```python
+response = trainly.query(
+    question="Explain the key concepts",
+    model="gpt-4o-mini",
+    temperature=0.7,
+    max_tokens=500,
+    include_context=True
+)
+
+print(f"Model used: {response.model or 'default'}")
+print(f"Answer preview: {response.answer[:100]}...")
+```
+
 ### Type Hints
 
 ```python
@@ -186,6 +280,40 @@ for chunk in trainly.query_stream(
         print(f"\n\nUsing {len(chunk.data)} citations")
     elif chunk.type == "end":
         print("\n\nComplete!")
+```
+
+### Streaming with Content Collection
+
+Collect streaming content and verify completion:
+
+```python
+from trainly import TrainlyClient, StreamChunk
+
+trainly = TrainlyClient(
+    api_key="tk_your_api_key",
+    chat_id="chat_abc123"
+)
+
+chunks = []
+content_parts = []
+
+for chunk in trainly.query_stream("Explain the methodology"):
+    chunks.append(chunk)
+
+    if chunk.is_content:
+        content_parts.append(chunk.data)
+    elif chunk.is_end:
+        print("Received end marker")
+
+# Verify we received content
+assert len(chunks) > 0, "Should receive at least one chunk"
+assert any(chunk.is_end for chunk in chunks), "Should receive end marker"
+
+full_content = "".join(content_parts)
+assert len(full_content) > 0, "Should receive content"
+
+print(f"Total chunks received: {len(chunks)}")
+print(f"Content length: {len(full_content)} characters")
 ```
 
 ### Advanced Streaming with Progress
@@ -280,6 +408,65 @@ result = trainly.upload_file(
     filename="notes.txt",
     scope_values={"type": "notes"}
 )
+```
+
+### Upload from File Path (Simplified)
+
+You can also upload directly from a file path:
+
+```python
+import tempfile
+import os
+
+# Create a temporary test file
+with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
+    f.write("This is a test document for Trainly SDK testing.\n")
+    f.write("It contains multiple lines of text.\n")
+    f.write("The content should be searchable after upload.")
+    temp_path = f.name
+
+try:
+    # Upload the file
+    result = trainly.upload_file(temp_path)
+
+    assert result.success is True, "Upload should be successful"
+    assert result.file_id is not None, "File ID should be returned"
+    assert result.size_bytes > 0, "File size should be greater than 0"
+
+    print(f"Uploaded: {result.filename}")
+    print(f"File ID: {result.file_id}")
+    print(f"Size: {result.size_bytes} bytes")
+    print(f"Status: {result.processing_status}")
+finally:
+    # Clean up temp file
+    os.unlink(temp_path)
+```
+
+### Upload with Scope Values
+
+Add metadata to your files using scope values:
+
+```python
+import tempfile
+import os
+
+with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
+    f.write("Test document with scope values")
+    temp_path = f.name
+
+try:
+    result = trainly.upload_file(
+        temp_path,
+        scope_values={
+            "test_category": "sdk_testing",
+            "test_id": "test_123"
+        }
+    )
+
+    assert result.success is True, "Upload should be successful"
+    print("File uploaded with scope values")
+finally:
+    os.unlink(temp_path)
 ```
 
 ### Upload Text Content
@@ -1302,6 +1489,42 @@ def format_bytes(bytes: int) -> str:
     return f"{bytes:.1f} {sizes[i]}"
 ```
 
+### List Files with Validation
+
+Verify list results and handle edge cases:
+
+```python
+from trainly import TrainlyClient, FileListResult
+
+trainly = TrainlyClient(
+    api_key="tk_your_api_key",
+    chat_id="chat_abc123"
+)
+
+result = trainly.list_files()
+
+# Validate the result
+assert isinstance(result, FileListResult), "Result should be FileListResult"
+assert result.success is True, "List should be successful"
+assert isinstance(result.files, list), "Files should be a list"
+
+print(f"✓ List files successful")
+print(f"  Total files: {result.total_files}")
+print(f"  Total size: {result.total_size_bytes} bytes")
+
+if result.files:
+    print(f"  Sample file: {result.files[0].filename}")
+    print(f"    - File ID: {result.files[0].file_id}")
+    print(f"    - Size: {result.files[0].size_bytes} bytes")
+    print(f"    - Chunks: {result.files[0].chunk_count}")
+
+    # Get a file ID for deletion if needed
+    file_id = result.files[0].file_id
+else:
+    print("  No files found")
+    file_id = None
+```
+
 ### Advanced File Filtering
 
 ```python
@@ -1388,6 +1611,39 @@ for file_id in file_ids:
     # Rate limiting delay
     import time
     time.sleep(0.1)
+```
+
+### Delete File with Validation
+
+Validate deletion results and handle missing files:
+
+```python
+from trainly import TrainlyClient, FileDeleteResult
+
+trainly = TrainlyClient(
+    api_key="tk_your_api_key",
+    chat_id="chat_abc123"
+)
+
+file_id = "v1_user_xyz_doc_123"  # Your file ID
+
+if not file_id:
+    print("Skipping delete test - no file ID available")
+else:
+    try:
+        result = trainly.delete_file(file_id)
+
+        # Validate deletion
+        assert isinstance(result, FileDeleteResult), "Result should be FileDeleteResult"
+        assert result.success is True, "Delete should be successful"
+
+        print(f"✓ File deleted successfully")
+        print(f"  Deleted file: {result.filename}")
+        print(f"  Chunks deleted: {result.chunks_deleted}")
+        print(f"  Size freed: {result.size_bytes_freed} bytes")
+
+    except Exception as e:
+        print(f"✗ Delete file failed: {e}")
 ```
 
 ## V1 OAuth Authentication
@@ -2207,6 +2463,62 @@ except Exception as e:
     print(f"Unexpected error: {e}")
 ```
 
+### Error Handling for File Operations
+
+Handle errors specific to file operations:
+
+```python
+from trainly import TrainlyClient, TrainlyError
+import os
+
+trainly = TrainlyClient(
+    api_key="tk_your_api_key",
+    chat_id="chat_abc123"
+)
+
+# Test 1: Empty file ID for delete
+try:
+    trainly.delete_file("")
+    print("Should have raised error for empty file ID")
+except TrainlyError as e:
+    print(f"Correctly raised error for empty file ID: {e}")
+
+# Test 2: Non-existent file upload
+try:
+    trainly.upload_file("/nonexistent/file.pdf")
+    print("Should have raised error for non-existent file")
+except TrainlyError as e:
+    print(f"Correctly raised error for non-existent file: {e}")
+except FileNotFoundError as e:
+    print(f"File not found: {e}")
+```
+
+### Validating Upload Results
+
+Always verify upload success:
+
+```python
+from trainly import TrainlyClient, UploadResult
+
+trainly = TrainlyClient(
+    api_key="tk_your_api_key",
+    chat_id="chat_abc123"
+)
+
+result = trainly.upload_file("document.pdf")
+
+# Verify upload was successful
+assert isinstance(result, UploadResult), "Result should be UploadResult"
+assert result.success is True, "Upload should be successful"
+assert result.file_id is not None, "File ID should be returned"
+assert result.size_bytes > 0, "File size should be greater than 0"
+
+print(f"✓ Upload successful: {result.filename}")
+print(f"  File ID: {result.file_id}")
+print(f"  Size: {result.size_bytes} bytes")
+print(f"  Status: {result.processing_status}")
+```
+
 ### Retry Decorator
 
 ```python
@@ -2252,20 +2564,52 @@ response = query_with_retry("What are the findings?")
 
 ### Context Manager
 
+The `TrainlyClient` supports Python's context manager protocol for automatic resource cleanup:
+
 ```python
 from trainly import TrainlyClient
+import os
 
 # Use context manager for automatic cleanup
 with TrainlyClient(
-    api_key="tk_your_api_key",
-    chat_id="chat_abc123"
+    api_key=os.getenv("TRAINLY_API_KEY"),
+    chat_id=os.getenv("TRAINLY_CHAT_ID")
 ) as trainly:
     response = trainly.query(
         question="What is the result?"
     )
     print(response.answer)
 
-# Connection automatically closed
+# Connection automatically closed when exiting the context
+```
+
+### Context Manager with Multiple Operations
+
+You can perform multiple operations within a single context:
+
+```python
+from trainly import TrainlyClient
+import os
+
+with TrainlyClient(
+    api_key=os.getenv("TRAINLY_API_KEY"),
+    chat_id=os.getenv("TRAINLY_CHAT_ID")
+) as trainly:
+    # Upload a file
+    with open("document.pdf", "rb") as f:
+        upload_result = trainly.upload_file(f, filename="document.pdf")
+
+    # Query about the uploaded content
+    response = trainly.query("What is in the document?")
+    print(response.answer)
+
+    # List files
+    files = trainly.list_files()
+    print(f"Total files: {files.total_files}")
+
+    # Delete the file
+    delete_result = trainly.delete_file(upload_result.file_id)
+    print(f"Deleted: {delete_result.filename}")
 ```
 
 ## Advanced Features
@@ -2776,6 +3120,221 @@ chunks_deleted: int = delete_result.chunks_deleted
 size_freed: int = delete_result.size_bytes_freed
 ```
 
+## File Lifecycle Management
+
+### Complete File Lifecycle
+
+Manage the complete lifecycle of a file: upload, query, verify, and delete:
+
+```python
+from trainly import TrainlyClient
+import tempfile
+import os
+import time
+
+trainly = TrainlyClient(
+    api_key="tk_your_api_key",
+    chat_id="chat_abc123"
+)
+
+# Step 1: Upload
+with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
+    f.write("Lifecycle test document content")
+    temp_path = f.name
+
+try:
+    upload_result = trainly.upload_file(temp_path)
+    file_id = upload_result.file_id
+    print(f"✓ Uploaded file: {upload_result.filename}")
+
+    # Step 2: List and verify
+    list_result = trainly.list_files()
+    file_ids = [f.file_id for f in list_result.files]
+    assert file_id in file_ids, "File should appear in list"
+    print("✓ File appears in file list")
+
+    # Step 3: Query about the file
+    response = trainly.query("What is in the test document?")
+    print("✓ Query successful after upload")
+    print(f"  Answer: {response.answer[:100]}...")
+
+    # Step 4: Delete
+    delete_result = trainly.delete_file(file_id)
+    assert delete_result.success is True
+    print("✓ File deleted successfully")
+    print(f"  Chunks deleted: {delete_result.chunks_deleted}")
+    print(f"  Size freed: {delete_result.size_bytes_freed} bytes")
+
+finally:
+    os.unlink(temp_path)
+```
+
+### Query Specific File Content
+
+Upload a file with specific content and verify the AI can answer questions about it:
+
+```python
+from trainly import TrainlyClient
+import tempfile
+import os
+import time
+
+trainly = TrainlyClient(
+    api_key="tk_your_api_key",
+    chat_id="chat_abc123"
+)
+
+# Create a file with very specific information
+specific_content = """
+Product Information Document
+
+Product Name: UltraSound Pro 5000 Headphones
+Model Number: USP-5000-BLK
+Release Date: September 22, 2024
+Price: $349.95
+
+Key Specifications:
+- Driver Size: 50mm neodymium drivers
+- Frequency Response: 20Hz - 40kHz
+- Impedance: 32 ohms
+- Battery Life: 48 hours with ANC on
+- Charging: USB-C fast charging (10 min = 6 hours)
+- Weight: 285 grams
+
+Features:
+- Active Noise Cancellation (ANC) with 8 microphones
+- Bluetooth 5.3 with multipoint connectivity
+- Spatial audio support
+- Premium leather ear cushions
+- Foldable design with carrying case
+
+Warranty: 2 years manufacturer warranty
+"""
+
+with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
+    f.write(specific_content)
+    temp_path = f.name
+
+file_id = None
+try:
+    # Upload the file
+    upload_result = trainly.upload_file(temp_path)
+    file_id = upload_result.file_id
+    print(f"✓ Uploaded file with specific content: {upload_result.filename}")
+
+    # Wait for processing (files need time to be indexed)
+    print("Waiting for file processing...")
+    time.sleep(30)
+    print("File processed and indexed, continuing with tests...")
+
+    # Test 1: Query about the product name
+    response1 = trainly.query("What is the product name mentioned in the document?")
+    assert "UltraSound Pro 5000" in response1.answer or "USP-5000" in response1.answer, \
+        f"Answer should contain product name. Got: {response1.answer}"
+    print("✓ Product name query verified")
+
+    # Test 2: Query about the price
+    response2 = trainly.query("What is the price of the UltraSound Pro 5000?")
+    assert "$349" in response2.answer or "349" in response2.answer, \
+        f"Answer should contain price. Got: {response2.answer}"
+    print("✓ Price query verified")
+
+    # Test 3: Query about specifications
+    response3 = trainly.query("What is the battery life of the UltraSound Pro 5000 headphones?")
+    assert "48" in response3.answer, \
+        f"Answer should contain '48' hours. Got: {response3.answer}"
+    print("✓ Battery life specification query verified")
+
+    # Test 4: Query about release date
+    response4 = trainly.query("When was the UltraSound Pro 5000 released?")
+    assert "September" in response4.answer or "2024" in response4.answer, \
+        f"Answer should contain release date. Got: {response4.answer}"
+    print("✓ Release date query verified")
+
+    # Test 5: Query about warranty
+    response5 = trainly.query("What is the warranty period for the UltraSound Pro 5000?")
+    assert "2" in response5.answer and ("year" in response5.answer.lower() or "yr" in response5.answer.lower()), \
+        f"Answer should contain '2 years'. Got: {response5.answer}"
+    print("✓ Warranty query verified")
+
+    print("\n✓ All content verification checks passed!")
+
+    # Test 6: Delete the file and verify AI no longer knows the content
+    print("\nTesting query after file deletion...")
+    delete_result = trainly.delete_file(file_id)
+    assert delete_result.success is True, "File deletion should succeed"
+    print(f"✓ File deleted: {delete_result.filename}")
+
+    # Wait for deletion to propagate
+    time.sleep(5)
+
+    # Query about the deleted content - AI should not know
+    response_after_delete = trainly.query("What is the price of the UltraSound Pro 5000?")
+
+    # Check that the AI indicates it doesn't know or can't find the information
+    no_knowledge_indicators = [
+        "don't know", "do not know", "don't have", "do not have",
+        "not found", "no information", "cannot find", "can't find",
+        "unable to find", "not available", "not mentioned"
+    ]
+
+    answer_lower = response_after_delete.answer.lower()
+    has_no_knowledge = any(indicator in answer_lower for indicator in no_knowledge_indicators)
+    does_not_contain_price = "$349" not in response_after_delete.answer and "349.95" not in response_after_delete.answer
+
+    if has_no_knowledge or does_not_contain_price:
+        print("✓ AI correctly indicates it doesn't know after file deletion")
+    else:
+        print("⚠ AI still claims to know the information after deletion")
+        print("  This might indicate the file hasn't been fully removed from the index yet")
+
+    file_id = None  # Clear file_id since we already deleted it
+
+finally:
+    # Clean up
+    os.unlink(temp_path)
+    if file_id:
+        try:
+            trainly.delete_file(file_id)
+            print(f"Cleaned up test file: {file_id}")
+        except Exception as e:
+            print(f"Could not delete test file: {e}")
+```
+
+### Cleanup Before Testing
+
+Start with a clean slate by deleting all existing files:
+
+```python
+from trainly import TrainlyClient
+
+trainly = TrainlyClient(
+    api_key="tk_your_api_key",
+    chat_id="chat_abc123"
+)
+
+# Clean up: Delete all existing files
+print("Cleaning up: Deleting all existing files...")
+list_result = trainly.list_files()
+
+if list_result.files:
+    for file_info in list_result.files:
+        try:
+            trainly.delete_file(file_info.file_id)
+            print(f"  Deleted: {file_info.filename}")
+        except Exception as e:
+            print(f"  Could not delete {file_info.filename}: {e}")
+    print(f"✓ Cleaned up {len(list_result.files)} existing files")
+else:
+    print("No existing files to clean up")
+
+# Wait for deletions to propagate
+import time
+time.sleep(5)
+
+# Now you can start fresh with your test files
+```
+
 ## Real-World Examples
 
 ### Document Q&A CLI
@@ -2930,6 +3489,119 @@ def ask(question: str):
 response = ask("What are the main findings?")
 ```
 
+## Testing and Verification
+
+### Testing Query Responses
+
+Verify that queries return expected results:
+
+```python
+from trainly import TrainlyClient, QueryResponse
+
+trainly = TrainlyClient(
+    api_key="tk_your_api_key",
+    chat_id="chat_abc123"
+)
+
+# Test basic query
+response = trainly.query("What is the main topic?")
+
+# Validate response structure
+assert isinstance(response, QueryResponse), "Response should be QueryResponse"
+assert hasattr(response, 'answer'), "Response should have answer"
+assert isinstance(response.answer, str), "Answer should be a string"
+assert len(response.answer) > 0, "Answer should not be empty"
+
+print(f"✓ Query successful")
+print(f"  Answer length: {len(response.answer)} characters")
+print(f"  Context chunks: {len(response.context)}")
+
+if response.usage:
+    print(f"  Token usage: {response.usage.total_tokens} total tokens")
+```
+
+### Testing File Operations
+
+Test the complete file operation workflow:
+
+```python
+from trainly import TrainlyClient
+import tempfile
+import os
+
+trainly = TrainlyClient(
+    api_key="tk_your_api_key",
+    chat_id="chat_abc123"
+)
+
+# Create test file
+with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
+    f.write("Test document for SDK testing.\n")
+    f.write("Contains test content.")
+    temp_path = f.name
+
+try:
+    # Test upload
+    upload_result = trainly.upload_file(temp_path)
+    assert upload_result.success is True
+    assert upload_result.file_id is not None
+    print(f"✓ Upload test passed: {upload_result.filename}")
+
+    # Test list
+    list_result = trainly.list_files()
+    assert upload_result.file_id in [f.file_id for f in list_result.files]
+    print(f"✓ List test passed: Found {list_result.total_files} files")
+
+    # Test query
+    query_response = trainly.query("What is in the test document?")
+    assert len(query_response.answer) > 0
+    print(f"✓ Query test passed: Got answer")
+
+    # Test delete
+    delete_result = trainly.delete_file(upload_result.file_id)
+    assert delete_result.success is True
+    print(f"✓ Delete test passed: {delete_result.filename}")
+
+    print("\n✓ All file operation tests passed!")
+
+finally:
+    os.unlink(temp_path)
+```
+
+### Testing Streaming Queries
+
+Verify streaming functionality:
+
+```python
+from trainly import TrainlyClient
+
+trainly = TrainlyClient(
+    api_key="tk_your_api_key",
+    chat_id="chat_abc123"
+)
+
+chunks = []
+content_parts = []
+
+for chunk in trainly.query_stream("Explain the methodology"):
+    chunks.append(chunk)
+    if chunk.is_content:
+        content_parts.append(chunk.data)
+    elif chunk.is_end:
+        print("Received end marker")
+
+# Verify streaming results
+assert len(chunks) > 0, "Should receive at least one chunk"
+assert any(chunk.is_end for chunk in chunks), "Should receive end marker"
+
+full_content = "".join(content_parts)
+assert len(full_content) > 0, "Should receive content"
+
+print(f"✓ Streaming test passed")
+print(f"  Total chunks: {len(chunks)}")
+print(f"  Content length: {len(full_content)} characters")
+```
+
 ## Testing
 
 ### Unit Tests
@@ -3020,6 +3692,212 @@ async def test_async_query():
     response = await trainly.query(question="Test")
 
     assert response.answer
+```
+
+## Practical Usage Patterns
+
+### Waiting for File Processing
+
+After uploading a file, wait for it to be processed before querying:
+
+```python
+from trainly import TrainlyClient
+import time
+
+trainly = TrainlyClient(
+    api_key="tk_your_api_key",
+    chat_id="chat_abc123"
+)
+
+# Upload a file
+result = trainly.upload_file("document.pdf")
+file_id = result.file_id
+
+print(f"Uploaded: {result.filename}")
+print("Waiting for file processing...")
+
+# Wait for processing (typically 10-30 seconds)
+time.sleep(30)
+
+print("File processed and indexed, ready for queries!")
+
+# Now you can query about the file
+response = trainly.query("What is in the document?")
+print(response.answer)
+```
+
+### Handling File Processing Status
+
+Check processing status and wait until complete:
+
+```python
+from trainly import TrainlyClient
+import time
+
+trainly = TrainlyClient(
+    api_key="tk_your_api_key",
+    chat_id="chat_abc123"
+)
+
+result = trainly.upload_file("document.pdf")
+
+print(f"Upload status: {result.processing_status}")
+
+# Wait for processing with status checks
+max_wait = 60  # Maximum wait time in seconds
+wait_interval = 5  # Check every 5 seconds
+elapsed = 0
+
+while elapsed < max_wait:
+    files = trainly.list_files()
+    file_info = next((f for f in files.files if f.file_id == result.file_id), None)
+
+    if file_info and file_info.chunk_count > 0:
+        print("✓ File processed and indexed!")
+        break
+
+    print(f"Waiting... ({elapsed}s elapsed)")
+    time.sleep(wait_interval)
+    elapsed += wait_interval
+else:
+    print("⚠ File processing taking longer than expected")
+```
+
+### Complete Workflow Example
+
+A complete example showing the full workflow from initialization to querying:
+
+```python
+from trainly import TrainlyClient, TrainlyError
+import os
+import tempfile
+import time
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Initialize client
+api_key = os.getenv("TRAINLY_API_KEY")
+chat_id = os.getenv("TRAINLY_CHAT_ID")
+
+if not api_key or not chat_id:
+    raise ValueError("TRAINLY_API_KEY and TRAINLY_CHAT_ID must be set")
+
+client = TrainlyClient(api_key=api_key, chat_id=chat_id)
+print(f"✓ Client initialized with chat_id: {client.chat_id}")
+
+# Create test document
+test_content = """
+Product: UltraSound Pro 5000 Headphones
+Price: $349.95
+Battery Life: 48 hours
+Warranty: 2 years
+"""
+
+with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
+    f.write(test_content)
+    temp_path = f.name
+
+file_id = None
+try:
+    # Upload file
+    upload_result = client.upload_file(temp_path)
+    file_id = upload_result.file_id
+    print(f"✓ Uploaded: {upload_result.filename}")
+
+    # Wait for processing
+    print("Waiting for file processing...")
+    time.sleep(30)
+
+    # Query about the content
+    response = client.query("What is the price of the UltraSound Pro 5000?")
+    assert "$349" in response.answer or "349" in response.answer
+    print(f"✓ Query verified: {response.answer[:100]}...")
+
+    # List files
+    files = client.list_files()
+    assert file_id in [f.file_id for f in files.files]
+    print(f"✓ File found in list: {files.total_files} total files")
+
+    # Delete file
+    delete_result = client.delete_file(file_id)
+    assert delete_result.success is True
+    print(f"✓ File deleted: {delete_result.filename}")
+
+    print("\n✓ All operations completed successfully!")
+
+except TrainlyError as e:
+    print(f"✗ Trainly error: {e}")
+except Exception as e:
+    print(f"✗ Unexpected error: {e}")
+finally:
+    # Cleanup
+    os.unlink(temp_path)
+    if file_id:
+        try:
+            client.delete_file(file_id)
+        except:
+            pass
+```
+
+### Error Handling in Production
+
+Robust error handling for production use:
+
+```python
+from trainly import TrainlyClient, TrainlyError
+import os
+import time
+from typing import Optional
+
+def safe_query(client: TrainlyClient, question: str, max_retries: int = 3) -> Optional[str]:
+    """Query with automatic retry on failure"""
+    for attempt in range(max_retries):
+        try:
+            response = client.query(question=question)
+            return response.answer
+        except TrainlyError as e:
+            if attempt < max_retries - 1:
+                wait_time = 2 ** attempt  # Exponential backoff
+                print(f"Attempt {attempt + 1} failed: {e}. Retrying in {wait_time}s...")
+                time.sleep(wait_time)
+            else:
+                print(f"Failed after {max_retries} attempts: {e}")
+                return None
+    return None
+
+def safe_upload(client: TrainlyClient, file_path: str) -> Optional[str]:
+    """Upload file with error handling"""
+    try:
+        result = client.upload_file(file_path)
+        if result.success:
+            return result.file_id
+        else:
+            print(f"Upload failed: {result}")
+            return None
+    except FileNotFoundError:
+        print(f"File not found: {file_path}")
+        return None
+    except TrainlyError as e:
+        print(f"Upload error: {e}")
+        return None
+
+# Usage
+client = TrainlyClient(
+    api_key=os.getenv("TRAINLY_API_KEY"),
+    chat_id=os.getenv("TRAINLY_CHAT_ID")
+)
+
+# Safe query
+answer = safe_query(client, "What are the main findings?")
+if answer:
+    print(f"Answer: {answer}")
+
+# Safe upload
+file_id = safe_upload(client, "document.pdf")
+if file_id:
+    print(f"Uploaded file ID: {file_id}")
 ```
 
 ## Best Practices
